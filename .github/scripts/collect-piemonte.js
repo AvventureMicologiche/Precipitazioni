@@ -1,12 +1,8 @@
 /**
- * collect-piemonte.js
- * Raccoglie dati precipitazione giornaliera da ARPA Piemonte
- * API: https://utility.arpa.piemonte.it/api_realtime
- * Endpoints: /pie_anag (stazioni) + /data_pie (misure)
- * Salva in data/piemonte/YYYY-MM-DD.json
- * Cancella file più vecchi di 365 giorni
+ * collect-piemonte.js - Script definitivo
+ * API ARPA Piemonte: /pie_anag (stazioni) + /data_pie (misure)
+ * Usa cum_rain_24h come valore giornaliero diretto
  */
-
 const fs   = require('fs');
 const path = require('path');
 
@@ -37,133 +33,126 @@ async function fetchJSON(url, retries = 3) {
       if (i < retries - 1) await new Promise(r => setTimeout(r, 3000));
     }
   }
-  throw new Error(`fetch fallito dopo ${retries} tentativi`);
+  throw new Error('fetch fallito dopo ' + retries + ' tentativi');
 }
 
 async function main() {
   const targetDate = getTargetDate();
-  console.log(`\n=== Raccolta dati Piemonte per ${targetDate} ===\n`);
+  console.log('\n=== Raccolta dati Piemonte per ' + targetDate + ' ===\n');
 
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
 
-  const outFile = path.join(DATA_DIR, `${targetDate}.json`);
+  const outFile = path.join(DATA_DIR, targetDate + '.json');
 
   // ── Step 1: anagrafica stazioni ──────────────────────────────
   console.log('Carico anagrafica stazioni...');
-  const anagData = await fetchJSON(`${API_BASE}/pie_anag?page_size=10000`);
-  const stazioni = Array.isArray(anagData) ? anagData : (anagData.data || anagData.results || []);
-  console.log(`  Stazioni totali: ${stazioni.length}`);
-  console.log(`  Esempio stazione:`, JSON.stringify(stazioni[0]).substring(0, 200));
+  const anagRaw = await fetchJSON(API_BASE + '/pie_anag?page_size=10000');
+  const stazioni = Array.isArray(anagRaw) ? anagRaw : (anagRaw.data || anagRaw.results || []);
+  console.log('  Stazioni: ' + stazioni.length);
 
-  // ── Step 2: dati precipitazione del giorno ───────────────────
-  // Prendiamo tutto il giorno: 00:00 → 23:59
-  const dateFrom = `${targetDate}T00:00`;
-  const dateTo   = `${targetDate}T23:59`;
-  console.log(`\nCarico misure ${dateFrom} → ${dateTo}...`);
+  // Indice stazione per station_code
+  const stIndex = {};
+  stazioni.forEach(function(s) {
+    if (s.station_code) stIndex[s.station_code] = s;
+  });
+
+  // ── Step 2: misure del giorno ────────────────────────────────
+  // Usiamo cum_rain_24h dall'ultima misura disponibile del giorno
+  const dateFrom = targetDate + 'T00:00';
+  const dateTo   = targetDate + 'T23:59';
+  console.log('Carico misure ' + dateFrom + ' → ' + dateTo + '...');
 
   let allMisure = [];
   let page = 1;
   while (true) {
-    const url = `${API_BASE}/data_pie?date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}&page=${page}&page_size=10000`;
-    const data = await fetchJSON(url);
-    const records = Array.isArray(data) ? data : (data.data || data.results || []);
-    console.log(`  Pagina ${page}: ${records.length} record`);
-    if (records.length === 0) break;
+    const url = API_BASE + '/data_pie?date_from=' + encodeURIComponent(dateFrom)
+      + '&date_to=' + encodeURIComponent(dateTo)
+      + '&page=' + page + '&page_size=10000';
+    const raw = await fetchJSON(url);
+    const records = Array.isArray(raw) ? raw : (raw.data || raw.results || []);
     allMisure = allMisure.concat(records);
     if (records.length < 10000) break;
     page++;
   }
-  console.log(`  Totale misure: ${allMisure.length}`);
-  if (allMisure.length > 0) {
-    console.log(`  Esempio misura:`, JSON.stringify(allMisure[0]).substring(0, 200));
-  }
+  console.log('  Misure totali: ' + allMisure.length);
 
-  // ── Step 3: calcola mm per stazione (max-min) ────────────────
-  // Raggruppa misure per stazione, filtra solo precipitazione
-  const stMap = {};
-  allMisure.forEach(m => {
-    // Cerca il campo precipitazione — potrebbe chiamarsi in vari modi
-    const keys = Object.keys(m);
-    console.log('  Chiavi misura:', keys.join(', '));
-    // Stampa solo la prima per debug
-    if (Object.keys(stMap).length === 0) {
-      console.log('  Prima misura completa:', JSON.stringify(m));
-    }
-
-    const id = m.station_code || m.codice || m.id_stazione || m.stazione;
+  // ── Step 3: prendi il cum_rain_24h massimo per stazione ──────
+  // L'API restituisce un record per stazione per ora
+  // cum_rain_24h è già la cumulata 24h → prendiamo il valore massimo del giorno
+  const rainMap = {};
+  allMisure.forEach(function(m) {
+    const id = m.station_code;
     if (!id) return;
-    if (!stMap[id]) stMap[id] = [];
-    // Cerca valore precipitazione
-    const prec = m.precipitation || m.precipitazione || m.prec || m.PREC || m.pioggia || m.rain;
-    if (prec !== undefined && prec !== null) {
-      const v = parseFloat(prec);
-      if (!isNaN(v) && v >= 0) stMap[id].push(v);
+    const v = parseFloat(m.cum_rain_24h);
+    if (isNaN(v) || v < 0) return;
+    if (rainMap[id] === undefined || v > rainMap[id]) {
+      rainMap[id] = v;
     }
   });
 
   // ── Step 4: costruisci output ─────────────────────────────────
-  const stIndex = {};
-  stazioni.forEach(s => {
-    const id = s.station_code || s.codice || s.id_stazione;
-    if (id) stIndex[id] = s;
-  });
-
   const output = [];
-  Object.keys(stMap).forEach(id => {
-    const vals = stMap[id];
-    if (vals.length === 0) return;
-    const s = stIndex[id] || {};
-    const lat = parseFloat(s.lat || s.latitude || s.y || 0);
-    const lon = parseFloat(s.lon || s.longitude || s.x || 0);
-    if (!lat || !lon) return;
+  Object.keys(rainMap).forEach(function(id) {
+    const s = stIndex[id];
+    if (!s) return;
+    const lat = parseFloat(s.lat);
+    const lon = parseFloat(s.lng || s.lon);
+    if (isNaN(lat) || isNaN(lon)) return;
+    // Bbox Piemonte
     if (lat < 43.8 || lat > 46.5 || lon < 6.6 || lon > 9.3) return;
 
-    let mm = 0;
-    if (vals.length >= 2) {
-      mm = Math.max(0, Math.max(...vals) - Math.min(...vals));
-    } else {
-      mm = Math.max(0, vals[0]);
-    }
-    if (mm > 300) mm = 0;
+    let mm = rainMap[id];
+    if (mm > 300) mm = 0; // cap anomalie
 
     output.push({
-      id,
-      n: s.station_name || s.nome || s.name || id,
+      id:  id,
+      n:   s.name || id,
       lat: Math.round(lat * 10000) / 10000,
       lon: Math.round(lon * 10000) / 10000,
-      q: parseInt(s.altitude || s.quota || 0) || 0,
-      p: s.province || s.provincia || s.prov || '—',
-      mm: Math.round(mm * 10) / 10
+      q:   parseInt(s.altitude || 0) || 0,
+      p:   s.province || '—',
+      mm:  Math.round(mm * 10) / 10
     });
   });
 
-  console.log(`\n  Stazioni con dati: ${output.length}`);
+  console.log('  Stazioni con dati: ' + output.length);
 
-  if (output.length < 3) {
-    console.warn('Poche stazioni, salvo comunque per debug...');
+  if (output.length < 5) {
+    console.error('Troppo poche stazioni (' + output.length + '), uscita senza salvare.');
+    process.exit(1);
   }
 
   // ── Step 5: salva ─────────────────────────────────────────────
-  const fileData = { date: targetDate, collected: new Date().toISOString(), count: output.length, stations: output };
+  const fileData = {
+    date:      targetDate,
+    collected: new Date().toISOString(),
+    count:     output.length,
+    stations:  output
+  };
   fs.writeFileSync(outFile, JSON.stringify(fileData), 'utf8');
-  console.log(`\nSalvato: ${outFile}`);
+  console.log('\nSalvato: ' + outFile + ' (' + output.length + ' stazioni)');
 
-  // ── Step 6: pulizia vecchi file ───────────────────────────────
+  // ── Step 6: pulizia file > 365 giorni ────────────────────────
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - MAX_DAYS);
   const cutoffStr = cutoff.toISOString().substring(0, 10);
-  const allFiles = fs.readdirSync(DATA_DIR).filter(f => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort();
+  const allFiles = fs.readdirSync(DATA_DIR)
+    .filter(function(f) { return /^\d{4}-\d{2}-\d{2}\.json$/.test(f); })
+    .sort();
   let deleted = 0;
-  allFiles.forEach(f => {
-    if (f.replace('.json','') < cutoffStr) {
+  allFiles.forEach(function(f) {
+    if (f.replace('.json', '') < cutoffStr) {
       fs.unlinkSync(path.join(DATA_DIR, f));
       deleted++;
     }
   });
-  console.log(`Pulizia: ${deleted} file eliminati, ${allFiles.length - deleted} rimanenti`);
-  console.log('\n=== Completato! ===');
+  console.log('Pulizia: ' + deleted + ' eliminati, ' + (allFiles.length - deleted) + ' rimanenti');
+  console.log('\n=== Completato! ===\n');
 }
 
-main().catch(e => { console.error('Errore fatale:', e); process.exit(1); });
+main().catch(function(e) {
+  console.error('Errore fatale:', e);
+  process.exit(1);
+});
