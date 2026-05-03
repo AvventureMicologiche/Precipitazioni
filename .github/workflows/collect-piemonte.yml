@@ -1,1 +1,41 @@
+name: Raccolta dati ARPA Piemonte
 
+on:
+  schedule:
+    # Ogni notte alle 23:55 ora italiana (22:55 UTC)
+    - cron: '55 22 * * *'
+  workflow_dispatch:
+    # Permette esecuzione manuale dalla UI GitHub (utile per test)
+    inputs:
+      date_override:
+        description: 'Data da raccogliere (YYYY-MM-DD, lascia vuoto per oggi)'
+        required: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Raccoglie dati precipitazioni Piemonte
+        run: node .github/scripts/collect-piemonte.js
+        env:
+          DATE_OVERRIDE: ${{ inputs.date_override }}
+
+      - name: Commit e push dati
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/piemonte/
+          # Commit solo se ci sono modifiche
+          git diff --staged --quiet || git commit -m "dati Piemonte $(date -u +%Y-%m-%d)"
+          git push
