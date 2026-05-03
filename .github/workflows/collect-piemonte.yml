@@ -1,4 +1,4 @@
-name: Piemonte
+name: Piemonte 1
 on:
   workflow_dispatch:
   schedule:
