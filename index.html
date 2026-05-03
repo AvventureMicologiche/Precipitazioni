@@ -1777,7 +1777,12 @@ function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
       console.warn('[PIE] info fallito, uso Open-Meteo:',e.message);
       loadOpenMeteoRegion(REGIONS.piemonte.stations,pastDate,nowDate,labelPeriodo,cb);
     });
-}'https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GEOJSON CONFINI
+// ═══════════════════════════════════════════════════════════════
+var GEOJSON_URL='https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson';
 var geojsonCache=null;
 
 function loadGeoJSONOnce(cb){
