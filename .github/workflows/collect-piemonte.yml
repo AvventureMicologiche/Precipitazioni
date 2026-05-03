@@ -1,4 +1,4 @@
-name: Raccolta dati ARPA Piemonte
+name: Raccolta Piemonte
 on:
   schedule:
     - cron: '55 22 * * *'
