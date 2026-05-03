@@ -14,28 +14,43 @@ body{display:flex;flex-direction:column;height:100%;height:100dvh;font-family:'S
 /* ── Header ── */
 header{background:#1b3f6e;color:#fff;padding:0 12px;height:46px;
   display:flex;align-items:center;justify-content:space-between;
-  flex-shrink:0;z-index:500;gap:10px;}
+  flex-shrink:0;z-index:500;gap:10px;position:relative;}
 .hdr-l{display:flex;align-items:center;gap:8px;flex-shrink:0}
-h1{font-size:13px;font-weight:600;white-space:nowrap}
+h1{font-size:14px;font-weight:600;white-space:nowrap}
 .hdr-sub{font-size:9px;opacity:.6;white-space:nowrap}
 
 #badge{font-size:9px;padding:2px 8px;border-radius:10px;
   background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
   white-space:nowrap;flex-shrink:0}
 
-/* ── Selettore regioni ── */
-.region-selector{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.region-selector-label{font-size:10px;opacity:.6;white-space:nowrap;text-transform:uppercase;letter-spacing:.05em;}
-.rcheck-wrap{display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none;}
+/* ── Selettore regioni — centrato nell'header ── */
+.region-selector{
+  display:flex;align-items:center;gap:14px;
+  position:absolute;left:50%;transform:translateX(-50%);
+}
+.region-selector-label{font-size:14px;font-weight:600;opacity:.9;white-space:nowrap;color:#fff;}
+.rcheck-wrap{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;}
 .rcheck-wrap input[type=checkbox]{display:none;}
-.rcheck-btn{font-size:12px;font-weight:700;padding:5px 12px;border-radius:6px;
-  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
-  color:rgba(255,255,255,.7);transition:all .15s;white-space:nowrap;}
-.rcheck-wrap input:checked + .rcheck-btn{background:#fff;color:#1b3f6e;border-color:#fff;}
-.rcheck-wrap:hover .rcheck-btn{background:rgba(255,255,255,.22);color:#fff;}
-@media(max-width:600px){
+.rcheck-box{
+  width:18px;height:18px;border-radius:4px;flex-shrink:0;
+  background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.6);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.rcheck-box::after{content:'';display:none;}
+.rcheck-wrap input:checked ~ .rcheck-box{background:#fff;border-color:#fff;}
+.rcheck-wrap input:checked ~ .rcheck-box::after{
+  content:'✓';display:block;font-size:12px;font-weight:900;color:#1b3f6e;line-height:1;
+}
+.rcheck-name{font-size:14px;font-weight:700;color:rgba(255,255,255,.8);transition:color .15s;}
+.rcheck-wrap input:checked ~ .rcheck-name{color:#fff;}
+.rcheck-wrap:hover .rcheck-box{border-color:#fff;background:rgba(255,255,255,.25);}
+.rcheck-wrap:hover .rcheck-name{color:#fff;}
+@media(max-width:700px){
+  .region-selector{position:static;transform:none;}
   .region-selector-label{display:none;}
-  .rcheck-btn{font-size:11px;padding:4px 8px;}
+  .rcheck-name{font-size:12px;}
+  .rcheck-box{width:16px;height:16px;}
 }
 
 /* ── Mappa (occupa tutto lo spazio rimanente) ── */
@@ -141,7 +156,27 @@ h1{font-size:13px;font-weight:600;white-space:nowrap}
   display:block;
 }
 
-#loader{position:fixed;inset:0;background:rgba(255,255,255,.96);
+/* ── Frecce tutorial ── */
+.tutorial-arrow{
+  position:fixed;
+  z-index:9998;
+  pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .4s;
+  animation:tutorialBounceV 0.8s ease-in-out infinite alternate;
+}
+.tutorial-arrow.arr-right{
+  animation:tutorialBounceH 0.8s ease-in-out infinite alternate;
+}
+.tutorial-arrow.hidden{opacity:0;}
+@keyframes tutorialBounceV{
+  from{transform:translateY(0);}
+  to{transform:translateY(-10px);}
+}
+@keyframes tutorialBounceH{
+  from{transform:translateX(0);}
+  to{transform:translateX(-10px);}
+}
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:10px;z-index:9999}
 .spinner{width:36px;height:36px;border:3px solid #eee;
@@ -249,6 +284,62 @@ h1{font-size:13px;font-weight:600;white-space:nowrap}
 </head>
 <body>
 
+<!-- Freccia 1: punta SU verso le checkbox regioni -->
+<div class="tutorial-arrow" id="arr-regions">
+  <svg width="50" height="65" viewBox="0 0 50 65" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#ff4422"/>
+        <stop offset="100%" style="stop-color:#bb0000"/>
+      </linearGradient>
+      <linearGradient id="g1dark" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#990000"/>
+        <stop offset="100%" style="stop-color:#660000"/>
+      </linearGradient>
+      <filter id="sh1">
+        <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#440000" flood-opacity="0.6"/>
+      </filter>
+    </defs>
+    <g filter="url(#sh1)">
+      <!-- Faccia frontale -->
+      <path d="M25 3 L47 32 L36 32 L36 62 L14 62 L14 32 L3 32 Z" fill="url(#g1)"/>
+      <!-- Lato destro scuro per volume 3D -->
+      <path d="M47 32 L36 32 L36 62 L40 58 L40 36 L50 36 Z" fill="url(#g1dark)" opacity="0.85"/>
+      <!-- Riflesso luce in alto a sinistra -->
+      <path d="M25 3 L14 32 L21 32 L25 22 Z" fill="white" opacity="0.25"/>
+      <path d="M14 32 L14 48 L18 48 L18 32 Z" fill="white" opacity="0.15"/>
+    </g>
+  </svg>
+</div>
+
+<!-- Freccia 2: punta a SINISTRA verso il pannello periodo -->
+<div class="tutorial-arrow arr-right hidden" id="arr-period">
+  <svg width="65" height="50" viewBox="0 0 65 50" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="g2" x1="100%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:#ff4422"/>
+        <stop offset="100%" style="stop-color:#bb0000"/>
+      </linearGradient>
+      <linearGradient id="g2dark" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:#990000"/>
+        <stop offset="100%" style="stop-color:#660000"/>
+      </linearGradient>
+      <filter id="sh2">
+        <feDropShadow dx="-2" dy="4" stdDeviation="4" flood-color="#440000" flood-opacity="0.6"/>
+      </filter>
+    </defs>
+    <g filter="url(#sh2)">
+      <!-- Faccia frontale -->
+      <path d="M3 25 L32 3 L32 14 L62 14 L62 36 L32 36 L32 47 Z" fill="url(#g2)"/>
+      <!-- Lato inferiore scuro per volume 3D -->
+      <path d="M32 36 L62 36 L62 40 L36 40 L36 47 L32 47 Z" fill="url(#g2dark)" opacity="0.85"/>
+      <!-- Riflesso -->
+      <path d="M3 25 L32 3 L32 14 L16 14 Z" fill="white" opacity="0.25"/>
+      <path d="M32 14 L48 14 L48 18 L32 18 Z" fill="white" opacity="0.15"/>
+    </g>
+  </svg>
+</div>
+
 <div id="loader">
   <div class="spinner"></div>
   <div id="lmsg">Caricamento mappa…</div>
@@ -264,14 +355,16 @@ h1{font-size:13px;font-weight:600;white-space:nowrap}
     </div>
   </div>
   <div class="region-selector">
-    <span class="region-selector-label">Regioni:</span>
+    <span class="region-selector-label">Clicca e scegli le regioni da visualizzare:</span>
     <label class="rcheck-wrap">
-      <input type="checkbox" id="chk-lombardia" value="lombardia" checked>
-      <span class="rcheck-btn">Lombardia</span>
+      <input type="checkbox" id="chk-lombardia" value="lombardia">
+      <span class="rcheck-box"></span>
+      <span class="rcheck-name">Lombardia</span>
     </label>
     <label class="rcheck-wrap">
-      <input type="checkbox" id="chk-piemonte" value="piemonte" checked>
-      <span class="rcheck-btn">Piemonte</span>
+      <input type="checkbox" id="chk-piemonte" value="piemonte">
+      <span class="rcheck-box"></span>
+      <span class="rcheck-name">Piemonte</span>
     </label>
   </div>
   <div id="badge">–</div>
@@ -1566,17 +1659,14 @@ function setRegionBorder(regionKey,cb){
       if(n.indexOf(filter)>=0) feat=f;
     });
 
-    // Rimuovi solo il bordo di questa regione se esiste già
+    // Rimuovi SOLO il bordo di questa specifica regione se già esiste
     if(regionBorders[regionKey]){map.removeLayer(regionBorders[regionKey]);delete regionBorders[regionKey];}
-    // (legacy) rimuovi regionBorder singolo se presente
-    if(regionBorder){map.removeLayer(regionBorder);regionBorder=null;}
 
     if(feat){
       var layer=L.geoJSON(feat,{
         style:{color:'#1b3f6e',weight:1.5,opacity:0.6,fill:false}
       }).addTo(map);
       regionBorders[regionKey]=layer;
-      regionBorder=layer; // compatibilità
 
       var rings=[];
       var geom=feat.geometry;
@@ -1640,29 +1730,60 @@ function switchRegion(regionKey){
   });
 }
 
+// ─── Centra mappa sulle regioni attive ───────────────────────
+var REGION_BOUNDS={
+  lombardia: [[44.68, 8.50],[46.64,11.36]],
+  piemonte:  [[43.80, 6.63],[46.46, 9.22]]
+};
+
+function fitMapToRegions(regionKeys){
+  if(!regionKeys||regionKeys.length===0) return;
+  if(regionKeys.length===1){
+    var cfg=REGIONS[regionKeys[0]];
+    if(cfg) map.setView(cfg.center, cfg.zoom, {animate:true,duration:0.6});
+    return;
+  }
+  // Più regioni: calcola bbox unificata
+  var latMin=90,latMax=-90,lonMin=180,lonMax=-180;
+  regionKeys.forEach(function(rk){
+    var b=REGION_BOUNDS[rk];
+    if(!b) return;
+    if(b[0][0]<latMin) latMin=b[0][0];
+    if(b[1][0]>latMax) latMax=b[1][0];
+    if(b[0][1]<lonMin) lonMin=b[0][1];
+    if(b[1][1]>lonMax) lonMax=b[1][1];
+  });
+  map.fitBounds([[latMin,lonMin],[latMax,lonMax]],{animate:true,duration:0.6,padding:[30,30]});
+}
+
 // Listener checkbox regioni
 document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(cb){
   cb.addEventListener('change',function(){
     var active=getActiveRegions();
-    // Almeno una regione deve essere attiva
-    if(active.length===0){this.checked=true;return;}
-    // Carica/rimuovi bordi
+    if(active.length===0){
+      clearMarkers();
+      clearHeatmap();
+      Object.keys(regionBorders).forEach(function(rk){map.removeLayer(regionBorders[rk]);delete regionBorders[rk];});
+      document.getElementById('legend-panel').style.display='none';
+      document.getElementById('badge').textContent='–';
+      document.getElementById('datehdr').textContent='Seleziona il periodo';
+      return;
+    }
     var rk=this.value;
     if(this.checked){
       setRegionBorder(rk,function(){
-        // Mostra stazioni di default per la nuova regione
-        addDefaultMarkersForRegion(rk);
+        clearMarkers();
+        getActiveRegions().forEach(function(r){addDefaultMarkersForRegion(r);});
+        fitMapToRegions(getActiveRegions());
       });
     } else {
       if(regionBorders[rk]){map.removeLayer(regionBorders[rk]);delete regionBorders[rk];}
-    }
-    // Se c'era un periodo attivo, ricarica
-    if(currentPast&&currentNow){
-      loadData(currentPast,currentNow,currentLabel);
-    } else {
-      // Ricarica solo i marker di default
       clearMarkers();
       getActiveRegions().forEach(function(r){addDefaultMarkersForRegion(r);});
+      fitMapToRegions(getActiveRegions());
+    }
+    if(currentPast&&currentNow){
+      loadData(currentPast,currentNow,currentLabel);
     }
   });
 });
@@ -1771,10 +1892,79 @@ window.addEventListener('resize', function(){
 }());
 
 // ═══════════════════════════════════════════════════════════════
-// AVVIO
+// TUTORIAL FRECCE
 // ═══════════════════════════════════════════════════════════════
-// Carica confini di tutte le regioni attive all'avvio, poi stazioni
-loadAllBorders(['lombardia','piemonte'],function(){
+(function(){
+  var arrRegions = document.getElementById('arr-regions');
+  var arrPeriod  = document.getElementById('arr-period');
+  var tutorialDone = false;
+
+  function positionArrows(){
+    // Freccia 1: sotto le checkbox, centrata TRA le due regioni
+    var chk1 = document.getElementById('chk-lombardia');
+    var chk2 = document.getElementById('chk-piemonte');
+    if(chk1 && chk2 && arrRegions){
+      var r1 = chk1.closest('.rcheck-wrap').getBoundingClientRect();
+      var r2 = chk2.closest('.rcheck-wrap').getBoundingClientRect();
+      var centerX = (r1.right + r2.left) / 2;
+      var bottomY = Math.max(r1.bottom, r2.bottom);
+      arrRegions.style.left = (centerX - 24) + 'px';
+      arrRegions.style.top  = (bottomY + 4) + 'px';
+    }
+
+    // Freccia 2: a destra del pannello periodo, punta a SINISTRA
+    var tp = document.getElementById('time-panel');
+    if(tp && arrPeriod){
+      var r2 = tp.getBoundingClientRect();
+      arrPeriod.style.left = (r2.right + 6) + 'px';
+      arrPeriod.style.top  = (r2.top + r2.height/2 - 24) + 'px';
+    }
+  }
+
+  function hideTutorialArrow1(){
+    arrRegions.classList.add('hidden');
+    setTimeout(function(){
+      arrRegions.style.display='none';
+    }, 500);
+  }
+
+  function showTutorialArrow2(){
+    arrPeriod.classList.remove('hidden');
+    positionArrows();
+  }
+
+  function hideTutorialArrow2(){
+    if(tutorialDone) return;
+    tutorialDone = true;
+    arrPeriod.classList.add('hidden');
+    setTimeout(function(){
+      arrPeriod.style.display='none';
+    }, 500);
+  }
+
+  // Posiziona all'avvio e su resize
+  window.addEventListener('load', function(){ setTimeout(positionArrows, 300); });
+  window.addEventListener('resize', positionArrows);
+  setTimeout(positionArrows, 600);
+
+  // Freccia 1 scompare alla prima checkbox spuntata
+  document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      if(document.querySelector('.rcheck-wrap input[type=checkbox]:checked')){
+        hideTutorialArrow1();
+        setTimeout(showTutorialArrow2, 400);
+      }
+    });
+  });
+
+  // Freccia 2 scompare al click su qualsiasi bottone periodo
+  document.querySelectorAll('.tp-btn, .tp-custom-btn, #cd-apply').forEach(function(btn){
+    btn.addEventListener('click', hideTutorialArrow2);
+  });
+}());
+// Carica GeoJSON e stazioni ARPA in background, poi nasconde loader
+// I confini e le stazioni vengono mostrati solo quando l'utente seleziona una regione
+loadGeoJSONOnce(function(){
   document.getElementById('lmsg').textContent='Caricamento stazioni ARPA…';
   var stUrl='/.netlify/functions/arpa?endpoint=nf78-nj6b.json&$limit=500&$select=idsensore,nomestazione,lat,lng,quota,provincia&$where=tipologia=%27Precipitazione%27';
   fetch(stUrl)
@@ -1801,7 +1991,7 @@ loadAllBorders(['lombardia','piemonte'],function(){
     })
     .finally(function(){
       document.getElementById('loader').style.display='none';
-      loadDefaultMarkers();
+      // Nessuna stazione mostrata finché l'utente non sceglie una regione
     });
 });
 
