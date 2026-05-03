@@ -488,10 +488,10 @@ var REGIONS = {
   piemonte: {
     name: 'Piemonte',
     center: [44.9, 7.9], zoom: 8,
-    fonte: 'Open-Meteo (ERA5 reanalysis)',
+    fonte: 'ARPA Piemonte (live)',
     geojson: 'https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson',
     geojsonFilter: 'piemon',
-    dataSource: 'open_meteo',
+    dataSource: 'arpa_piemonte',
     stations: [
       {n:"Torino",          lat:45.070,lon:7.686, q:240, p:"TO"},
       {n:"Cuneo",           lat:44.385,lon:7.542, q:534, p:"CN"},
@@ -1432,6 +1432,8 @@ function loadData(pastDate,nowDate,labelPeriodo){
 
     if(source==='arpa_lombardia'){
       loadARPALombardiaRegion(pastDate,nowDate,labelPeriodo,onRegionDone);
+    } else if(source==='arpa_piemonte'){
+      loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,onRegionDone);
     } else {
       loadOpenMeteoRegion(cfg.stations||[],pastDate,nowDate,labelPeriodo,onRegionDone);
     }
@@ -1634,8 +1636,148 @@ function loadOpenMeteoRegion(stations,pastDate,nowDate,labelPeriodo,cb){
     .catch(function(e){console.warn('OM error:',e.message);batch.forEach(function(s){results[s.n]=0;});onBatchDone();});
   });
 }
-// ═══════════════════════════════════════════════════════════════
-var GEOJSON_URL='https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson';
+
+// ─── ARPA Piemonte → callback ─────────────────────────────────
+// ≤6 giorni: API realtime | >6 giorni: file storici JSON dal repo
+// Mostra avviso se lo storico non è ancora disponibile
+function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
+  var msRange=nowDate.getTime()-pastDate.getTime();
+  var SIX_DAYS=6*24*3600000;
+  var API_BASE='/.netlify/functions/arpa-piemonte';
+
+  function fmtDate(d){
+    var p=function(n){return String(n).padStart(2,'0');};
+    return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  }
+
+  // Helper: genera array di date YYYY-MM-DD tra due date
+  function getDays(from,to){
+    var days=[];
+    var d=new Date(from.getFullYear(),from.getMonth(),from.getDate());
+    var e=new Date(to.getFullYear(),to.getMonth(),to.getDate());
+    while(d<=e){days.push(fmtDate(new Date(d)));d.setDate(d.getDate()+1);}
+    return days;
+  }
+
+  // Helper: costruisce array stazioni dal JSON storico
+  function buildOutput(stMap){
+    return Object.keys(stMap).map(function(id){
+      var s=stMap[id];
+      return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
+              mm:s.mm<0.5?0:Math.round(s.mm*10)/10};
+    });
+  }
+
+  // ── Realtime: ultimi 6 giorni via API Netlify proxy ───────────
+  if(msRange<=SIX_DAYS){
+    var dateFrom=fmtDate(pastDate)+'T00:00';
+    var dateTo=fmtDate(nowDate)+'T23:59';
+    var url=API_BASE+'?type=data_pie'
+      +'&date_from='+encodeURIComponent(dateFrom)
+      +'&date_to='+encodeURIComponent(dateTo);
+
+    fetch(API_BASE+'?type=anag')
+      .then(function(r){if(!r.ok)throw new Error('anag HTTP '+r.status);return r.json();})
+      .then(function(anagRaw){
+        var stazioni=Array.isArray(anagRaw)?anagRaw:(anagRaw.data||anagRaw.results||[]);
+        var stIndex={};
+        stazioni.forEach(function(s){if(s.station_code)stIndex[s.station_code]=s;});
+        return fetch(url).then(function(r){if(!r.ok)throw new Error('data HTTP '+r.status);return r.json();})
+          .then(function(raw){
+            var misure=Array.isArray(raw)?raw:(raw.data||raw.results||[]);
+            var rainMap={};
+            misure.forEach(function(m){
+              var id=m.station_code;if(!id)return;
+              var v=parseFloat(m.cum_rain_24h);
+              if(isNaN(v)||v<0)return;
+              if(rainMap[id]===undefined||v>rainMap[id])rainMap[id]=v;
+            });
+            var output=[];
+            Object.keys(rainMap).forEach(function(id){
+              var s=stIndex[id];if(!s)return;
+              var lat=parseFloat(s.lat),lon=parseFloat(s.lng||s.lon);
+              if(isNaN(lat)||isNaN(lon))return;
+              if(lat<43.8||lat>46.5||lon<6.6||lon>9.3)return;
+              var mm=rainMap[id];if(mm>300)mm=0;
+              output.push({n:s.name||id,lat:Math.round(lat*10000)/10000,
+                lon:Math.round(lon*10000)/10000,q:parseInt(s.altitude||0)||0,
+                p:s.province||'—',mm:Math.round(mm*10)/10});
+            });
+            cb(output);
+          });
+      })
+      .catch(function(e){
+        console.warn('[PIE realtime] fallback Open-Meteo:',e.message);
+        loadOpenMeteoRegion(REGIONS.piemonte.stations,pastDate,nowDate,labelPeriodo,cb);
+      });
+    return;
+  }
+
+  // ── Storico: legge file JSON giornalieri dal repo ─────────────
+  var days=getDays(pastDate,nowDate);
+  var rainTot={}; // id → mm cumulati
+  var stMeta={}; // id → {n,lat,lon,q,p}
+  var missingDays=[];
+  var doneDays=0;
+
+  // Prima controlla info sul database
+  fetch(API_BASE+'?type=info')
+    .then(function(r){return r.ok?r.json():Promise.reject('info fail');})
+    .then(function(info){
+      var firstDate=info.firstDate;
+      // Avvisa se il database non copre tutto il periodo richiesto
+      if(firstDate && fmtDate(pastDate)<firstDate){
+        var msg='⚠️ Dati Piemonte disponibili dal '+firstDate+' — periodo parziale';
+        document.getElementById('tp-status').textContent=msg;
+      }
+      // Carica ogni giorno disponibile
+      var pending=days.length;
+      if(pending===0){cb([]);return;}
+
+      days.forEach(function(dateStr){
+        fetch(API_BASE+'?type=storico&date='+dateStr)
+          .then(function(r){
+            if(r.status===404){missingDays.push(dateStr);return null;}
+            if(!r.ok)throw new Error('HTTP '+r.status);
+            return r.json();
+          })
+          .then(function(data){
+            if(data&&data.stations){
+              data.stations.forEach(function(s){
+                var id=s.id||s.n;
+                if(!stMeta[id]) stMeta[id]={n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p};
+                rainTot[id]=(rainTot[id]||0)+s.mm;
+              });
+            }
+          })
+          .catch(function(e){console.warn('[PIE storico] '+dateStr+':',e.message);})
+          .finally(function(){
+            doneDays++;
+            if(doneDays>=pending){
+              // Tutti i giorni caricati
+              if(Object.keys(rainTot).length<5){
+                // Nessun dato storico — fallback Open-Meteo con avviso
+                var firstAvail=info&&info.firstDate?info.firstDate:'oggi';
+                document.getElementById('tp-status').textContent=
+                  '⚠️ Storico Piemonte disponibile dal '+firstAvail+' — uso dati stimati';
+                loadOpenMeteoRegion(REGIONS.piemonte.stations,pastDate,nowDate,labelPeriodo,cb);
+                return;
+              }
+              var output=Object.keys(rainTot).map(function(id){
+                var s=stMeta[id];
+                return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
+                        mm:rainTot[id]<0.5?0:Math.round(rainTot[id]*10)/10};
+              });
+              cb(output);
+            }
+          });
+      });
+    })
+    .catch(function(e){
+      console.warn('[PIE] info fallito, uso Open-Meteo:',e.message);
+      loadOpenMeteoRegion(REGIONS.piemonte.stations,pastDate,nowDate,labelPeriodo,cb);
+    });
+}'https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson';
 var geojsonCache=null;
 
 function loadGeoJSONOnce(cb){
