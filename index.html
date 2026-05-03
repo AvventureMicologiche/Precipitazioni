@@ -23,6 +23,18 @@ h1{font-size:13px;font-weight:600;white-space:nowrap}
   background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
   white-space:nowrap;flex-shrink:0}
 
+/* ── Tab regioni ── */
+.region-tabs{display:flex;gap:5px;flex-shrink:0;}
+.rtab{font-size:12px;font-weight:700;padding:5px 12px;border-radius:6px;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+  color:rgba(255,255,255,.8);cursor:pointer;transition:all .15s;white-space:nowrap;
+  user-select:none;}
+.rtab:hover{background:rgba(255,255,255,.22);color:#fff;}
+.rtab.active{background:#fff;color:#1b3f6e;border-color:#fff;}
+@media(max-width:600px){
+  .rtab{font-size:11px;padding:4px 8px;}
+}
+
 /* ── Mappa (occupa tutto lo spazio rimanente) ── */
 #map-wrap{flex:1;position:relative;min-height:0;}
 #map{width:100%;height:100%;}
@@ -244,9 +256,13 @@ h1{font-size:13px;font-weight:600;white-space:nowrap}
   <div class="hdr-l">
     <span style="font-size:18px">🌧</span>
     <div>
-      <h1>Precipitazioni Lombardia <span style="font-size:10px;font-weight:400;opacity:.6;letter-spacing:.05em;">(BETA V2.0)</span></h1>
+      <h1>Precipitazioni Nord Italia <span style="font-size:10px;font-weight:400;opacity:.6;letter-spacing:.05em;">(BETA V2.0)</span></h1>
       <div class="hdr-sub" id="datehdr">Seleziona il periodo</div>
     </div>
+  </div>
+  <div class="region-tabs">
+    <div class="rtab active" data-region="lombardia">Lombardia</div>
+    <div class="rtab" data-region="piemonte">Piemonte</div>
   </div>
   <div id="badge">–</div>
 </header>
@@ -629,17 +645,16 @@ function col(mm){var c=mmToRGB(mm);return'rgb('+c[0]+','+c[1]+','+c[2]+')';}
 // ═══════════════════════════════════════════════════════════════
 var screenW=window.innerWidth;
 var screenH=window.innerHeight;
-// Su mobile la mappa occupa solo ~45% dello schermo in altezza
-// Zoom adattivo per far vedere la Lombardia intera nella porzione visibile
 var initZoom;
 if(screenW<=480){
-  initZoom = 7.5;  // mobile: invariato
+  initZoom = 6.5;
 } else if(screenW<=900){
-  initZoom = 8;    // tablet: era 7.5, ora 8
+  initZoom = 7;
 } else {
-  initZoom = 8.5;  // desktop: era 8, ora 8.5
+  initZoom = 7.5;
 }
-var initCenter=(screenW<=600)?[45.15,9.85]:[45.55,9.85];
+// Centro sul Nord Italia (Piemonte + Lombardia + Liguria + ER visibili)
+var initCenter=(screenW<=600)?[44.8,9.5]:[45.0,9.5];
 var map=L.map('map',{zoomSnap:0.5,zoomDelta:0.5}).setView(initCenter, initZoom);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
   maxZoom:19,subdomains:'abc',
@@ -799,12 +814,13 @@ function posTooltip(mx,my){
   tooltip.style.left=tx+'px';tooltip.style.top=ty+'px';
 }
 function showTooltip(s,rank,mx,my){
+  var cfg=REGIONS[currentRegion]||REGIONS.lombardia;
   document.getElementById('tt-nome').textContent=s.n;
   document.getElementById('tt-mm').textContent=s.mm;
   document.getElementById('tt-prov').textContent=s.p;
   document.getElementById('tt-quota').textContent=s.q+' m slm';
   document.getElementById('tt-rank').textContent='#'+rank+' / '+totalStations;
-  document.getElementById('tt-fonte').textContent='ARPA Lombardia / Open-Meteo';
+  document.getElementById('tt-fonte').textContent=cfg.fonte;
   posTooltip(mx,my);
   tooltip.style.display='block';
 }
@@ -1266,11 +1282,19 @@ function loadData(pastDate,nowDate,labelPeriodo){
   var d1=new Date(pastDate),d2=new Date(nowDate);
   function fmtD(d){return d.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});}
   document.getElementById('datehdr').textContent=fmtD(d1)+' – '+fmtD(d2);
-  document.getElementById('fonte-tag').textContent='Fonte: ARPA Lombardia';
 
-  // ARPA è la fonte unica — proxy Netlify gestisce il CORS
-  // Fallback su Open-Meteo solo se ARPA non risponde
-  loadARPALombardia(pastDate,nowDate,labelPeriodo);
+  var cfg=REGIONS[currentRegion]||REGIONS.lombardia;
+  var source=cfg.dataSource||'open_meteo';
+
+  document.getElementById('fonte-tag').textContent='Fonte: '+cfg.fonte;
+
+  if(source==='arpa_lombardia'){
+    loadARPALombardia(pastDate,nowDate,labelPeriodo);
+  } else {
+    // Open-Meteo per tutte le altre regioni
+    var stations=cfg.stations||[];
+    loadOpenMeteo(stations,pastDate,nowDate,labelPeriodo,'🌍');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1290,7 +1314,8 @@ function loadGeoJSONOnce(cb){
 
 function setRegionBorder(regionKey,cb){
   loadGeoJSONOnce(function(data){
-    var filter='lombar';
+    var cfg=REGIONS[regionKey]||REGIONS.lombardia;
+    var filter=cfg.geojsonFilter||'lombar';
     var feat=null;
     data.features.forEach(function(f){
       var n=(f.properties.reg_name||f.properties.NOME_REG||'').toLowerCase();
@@ -1338,11 +1363,29 @@ function switchRegion(regionKey){
   document.getElementById('datehdr').textContent='Seleziona un periodo';
   hideTooltip();
 
-  // fonte già impostata in loadData
+  // Centra mappa sulla nuova regione
+  var cfg=REGIONS[regionKey];
+  if(cfg){
+    map.setView(cfg.center, cfg.zoom, {animate:true});
+  }
+
+  // Aggiorna fonte tag
+  document.getElementById('fonte-tag').textContent='Fonte: '+(cfg?cfg.fonte:'—');
+
+  // Carica confine GeoJSON della nuova regione
+  setRegionBorder(regionKey, function(){
+    // Se c'era un periodo selezionato, ricarica i dati per la nuova regione
+    if(currentPast && currentNow){
+      loadData(currentPast, currentNow, currentLabel);
+    }
+  });
 }
 
 document.querySelectorAll('.rtab').forEach(function(tab){
-  tab.addEventListener('click',function(){switchRegion(this.dataset.region);});
+  tab.addEventListener('click',function(){
+    if(isLoading) return;
+    switchRegion(this.dataset.region);
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════
