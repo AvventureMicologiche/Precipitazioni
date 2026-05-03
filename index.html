@@ -23,16 +23,19 @@ h1{font-size:13px;font-weight:600;white-space:nowrap}
   background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
   white-space:nowrap;flex-shrink:0}
 
-/* ── Tab regioni ── */
-.region-tabs{display:flex;gap:5px;flex-shrink:0;}
-.rtab{font-size:12px;font-weight:700;padding:5px 12px;border-radius:6px;
+/* ── Selettore regioni ── */
+.region-selector{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.region-selector-label{font-size:10px;opacity:.6;white-space:nowrap;text-transform:uppercase;letter-spacing:.05em;}
+.rcheck-wrap{display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none;}
+.rcheck-wrap input[type=checkbox]{display:none;}
+.rcheck-btn{font-size:12px;font-weight:700;padding:5px 12px;border-radius:6px;
   background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
-  color:rgba(255,255,255,.8);cursor:pointer;transition:all .15s;white-space:nowrap;
-  user-select:none;}
-.rtab:hover{background:rgba(255,255,255,.22);color:#fff;}
-.rtab.active{background:#fff;color:#1b3f6e;border-color:#fff;}
+  color:rgba(255,255,255,.7);transition:all .15s;white-space:nowrap;}
+.rcheck-wrap input:checked + .rcheck-btn{background:#fff;color:#1b3f6e;border-color:#fff;}
+.rcheck-wrap:hover .rcheck-btn{background:rgba(255,255,255,.22);color:#fff;}
 @media(max-width:600px){
-  .rtab{font-size:11px;padding:4px 8px;}
+  .region-selector-label{display:none;}
+  .rcheck-btn{font-size:11px;padding:4px 8px;}
 }
 
 /* ── Mappa (occupa tutto lo spazio rimanente) ── */
@@ -260,9 +263,16 @@ h1{font-size:13px;font-weight:600;white-space:nowrap}
       <div class="hdr-sub" id="datehdr">Seleziona il periodo</div>
     </div>
   </div>
-  <div class="region-tabs">
-    <div class="rtab active" data-region="lombardia">Lombardia</div>
-    <div class="rtab" data-region="piemonte">Piemonte</div>
+  <div class="region-selector">
+    <span class="region-selector-label">Regioni:</span>
+    <label class="rcheck-wrap">
+      <input type="checkbox" id="chk-lombardia" value="lombardia" checked>
+      <span class="rcheck-btn">Lombardia</span>
+    </label>
+    <label class="rcheck-wrap">
+      <input type="checkbox" id="chk-piemonte" value="piemonte" checked>
+      <span class="rcheck-btn">Piemonte</span>
+    </label>
   </div>
   <div id="badge">–</div>
 </header>
@@ -664,7 +674,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 // ═══════════════════════════════════════════════════════════════
 // STATO
 // ═══════════════════════════════════════════════════════════════
-var currentRegion  = 'lombardia';
+var activeRegions   = ['lombardia','piemonte']; // regioni con checkbox spuntata
 var ARPA_STATIONS  = null; // popolato al caricamento da API ARPA
 var lombardiaRings = [];
 var regionRings    = {};   // cache GeoJSON per regione
@@ -1265,10 +1275,28 @@ function loadOpenMeteo(stations,pastDate,nowDate,labelPeriodo,badgePrefix){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// DISPATCHER: decide quale fonte usare per la regione corrente
+// HELPER: regioni attive dalle checkbox
+// ═══════════════════════════════════════════════════════════════
+function getActiveRegions(){
+  var active=[];
+  document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(cb){
+    if(cb.checked) active.push(cb.value);
+  });
+  return active;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DISPATCHER: carica dati per tutte le regioni attive
 // ═══════════════════════════════════════════════════════════════
 function loadData(pastDate,nowDate,labelPeriodo){
   if(isLoading) return;
+
+  var regions=getActiveRegions();
+  if(regions.length===0){
+    alert('Seleziona almeno una regione!');
+    return;
+  }
+
   isLoading=true;
   currentPast=pastDate; currentNow=nowDate; currentLabel=labelPeriodo;
 
@@ -1283,22 +1311,236 @@ function loadData(pastDate,nowDate,labelPeriodo){
   function fmtD(d){return d.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});}
   document.getElementById('datehdr').textContent=fmtD(d1)+' – '+fmtD(d2);
 
-  var cfg=REGIONS[currentRegion]||REGIONS.lombardia;
-  var source=cfg.dataSource||'open_meteo';
+  // Raccoglie i risultati da tutte le regioni, poi render unificato
+  var allData=[];
+  var pending=regions.length;
 
-  document.getElementById('fonte-tag').textContent='Fonte: '+cfg.fonte;
-
-  if(source==='arpa_lombardia'){
-    loadARPALombardia(pastDate,nowDate,labelPeriodo);
-  } else {
-    // Open-Meteo per tutte le altre regioni
-    var stations=cfg.stations||[];
-    loadOpenMeteo(stations,pastDate,nowDate,labelPeriodo,'🌍');
+  function onRegionDone(dati){
+    allData=allData.concat(dati);
+    pending--;
+    if(pending>0) return;
+    // Tutte le regioni caricate — render finale unificato
+    if(allData.length<3){
+      setLoading(false);
+      document.getElementById('tp-status').textContent='⚠️ Nessun dato disponibile';
+      return;
+    }
+    renderMulti(allData,labelPeriodo);
   }
+
+  regions.forEach(function(regionKey){
+    var cfg=REGIONS[regionKey]||REGIONS.lombardia;
+    var source=cfg.dataSource||'open_meteo';
+
+    // Assicura che il confine GeoJSON sia caricato
+    if(!regionRings[regionKey]){
+      setRegionBorder(regionKey,function(){});
+    }
+
+    if(source==='arpa_lombardia'){
+      loadARPALombardiaRegion(pastDate,nowDate,labelPeriodo,onRegionDone);
+    } else {
+      loadOpenMeteoRegion(cfg.stations||[],pastDate,nowDate,labelPeriodo,onRegionDone);
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
-// GEOJSON CONFINI
+// RENDER MULTI-REGIONE
+// ═══════════════════════════════════════════════════════════════
+function renderMulti(allData, labelPeriodo){
+  var regions=getActiveRegions();
+  var allRings=[];
+  regions.forEach(function(rk){
+    var rings=regionRings[rk]||[];
+    rings.forEach(function(r){allRings.push(r);});
+  });
+  var fonti=regions.map(function(rk){
+    return REGIONS[rk]?REGIONS[rk].fonte:'—';
+  });
+  // Deduplica fonti identiche
+  var fontiUniq=fonti.filter(function(v,i,a){return a.indexOf(v)===i;});
+  var fonteStr=fontiUniq.join(' + ');
+  document.getElementById('fonte-tag').textContent='Fonte: '+fonteStr;
+  render(allData, fonteStr, labelPeriodo, allRings);
+}
+
+// Estende render per accettare rings opzionale
+var _renderBase=render;
+render=function(dati,fonte,labelPeriodo,ringsOverride){
+  totalStations=dati.length;
+  var sorted=dati.slice().sort(function(a,b){return b.mm-a.mm;});
+  var vals=dati.map(function(d){return d.mm;});
+  var mx=Math.max.apply(null,vals),mn=Math.min.apply(null,vals);
+  var av=Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length);
+  document.getElementById('sn').textContent=dati.length;
+  document.getElementById('smx').textContent=Math.round(mx*10)/10;
+  document.getElementById('sav').textContent=av;
+  document.getElementById('smn').textContent=Math.round(mn*10)/10;
+  document.getElementById('badge').textContent=dati.length+' stazioni · '+fonte;
+  document.getElementById('leg-title').textContent='mm cumulati ('+labelPeriodo+')';
+  document.getElementById('legend-panel').style.display='block';
+  positionLegend();
+  addMarkers(dati,sorted);
+  var hasRain=dati.some(function(s){return s.mm>0;});
+  document.getElementById('tp-status').textContent=hasRain?'⏳ Calcolo mappa…':'✅ Nessuna pioggia';
+  setTimeout(function(){
+    initCanvas();
+    clearHeatmap();
+    if(hasRain){
+      var activeR=getActiveRegions();
+      var rings=ringsOverride||(regionRings[activeR[0]]||[]);
+      gridPoints=buildGrid(dati,rings);
+      drawGrid();
+      document.getElementById('tp-status').textContent='✅ '+labelPeriodo;
+    }
+    setLoading(false);
+  },20);
+};
+
+// ─── Wrapper ARPA Lombardia → callback ───────────────────────
+function loadARPALombardiaRegion(pastDate,nowDate,labelPeriodo,cb){
+  var BASE='/.netlify/functions/arpa';
+  function getDays(from,to){
+    var days=[];
+    var d=new Date(from.getFullYear(),from.getMonth(),from.getDate());
+    var e=new Date(to.getFullYear(),to.getMonth(),to.getDate());
+    while(d<=e){days.push(new Date(d));d.setDate(d.getDate()+1);}
+    return days;
+  }
+  var days=getDays(pastDate,nowDate);
+  var stazioni=ARPA_STATIONS||LOMBARDIA_STATIONS;
+  var stMap={};
+  stazioni.forEach(function(s){
+    if(s.idsensore) stMap[s.idsensore]={n:s.n||s.nomestazione,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'—'};
+    else if(s.id) stMap[s.id]={n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p};
+  });
+  if(Object.keys(stMap).length<5){
+    loadOpenMeteoRegion(LOMBARDIA_STATIONS,pastDate,nowDate,labelPeriodo,cb);
+    return;
+  }
+  function queryDay(sm,day){
+    var ids=Object.keys(sm);
+    var yyyy=day.getFullYear();
+    var mo=String(day.getMonth()+1).padStart(2,'0');
+    var dd=String(day.getDate()).padStart(2,'0');
+    var dateStr=yyyy+'-'+mo+'-'+dd;
+    var todayStr=new Date().toISOString().substring(0,10);
+    var isToday=(dateStr===todayStr);
+    var cached={};var toFetch=[];
+    ids.forEach(function(id){
+      var k=CACHE_VER+dateStr+'_'+id;
+      try{var raw=localStorage.getItem(k);if(raw){var obj=JSON.parse(raw);if(!isToday||(Date.now()-obj.ts)<3600000){cached[id]=obj.tot;return;}}}catch(ex){}
+      toFetch.push(id);
+    });
+    if(toFetch.length===0) return Promise.resolve(cached);
+    var startISO=dateStr+'T00:00:00';var endISO=dateStr+'T23:59:59';
+    var mid=Math.ceil(toFetch.length/2);
+    var batches=[toFetch.slice(0,mid),toFetch.slice(mid)];
+    var fetches=batches.filter(function(b){return b.length>0;}).map(function(batchIds){
+      var orClause=batchIds.map(function(id){return "idsensore='"+id+"'";}).join(' OR ');
+      var whereStr="data between '"+startISO+"' and '"+endISO+"' AND valore >= '0' AND ("+orClause+')';
+      var url=BASE+'?endpoint=647i-nhxk.json&$select=idsensore,max(valore)%20as%20mx,min(valore)%20as%20mn&$where='+encodeURIComponent(whereStr)+'&$group=idsensore&$limit=5000';
+      return fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();});
+    });
+    return Promise.all(fetches).then(function(results){
+      var dayMap=Object.assign({},cached);
+      results.reduce(function(a,b){return a.concat(b);},[]).forEach(function(pr){
+        var mx=parseFloat(pr.mx)||0;var mn=parseFloat(pr.mn)||0;
+        var tot=Math.max(0,mx-mn);if(tot>300)tot=0;
+        dayMap[pr.idsensore]=tot;
+        try{localStorage.setItem(CACHE_VER+dateStr+'_'+pr.idsensore,JSON.stringify({tot:tot,ts:Date.now()}));}catch(ex){}
+      });
+      return dayMap;
+    });
+  }
+  var rainMap={};var WINDOW=10;
+  function loadWindow(idx){
+    if(idx>=days.length){
+      var allSt=Object.keys(stMap).map(function(id){
+        var st=stMap[id];var mm=rainMap[id]||0;
+        return {n:st.n,lat:st.lat,lon:st.lon,q:st.q,p:st.p,mm:mm<0.5?0:Math.round(mm*10)/10};
+      });
+      var out=selectUniform(allSt,200);
+      cb(out.length>=3?out:[]);
+      return;
+    }
+    var win=days.slice(idx,idx+WINDOW);
+    Promise.all(win.map(function(day){return queryDay(stMap,day);}))
+      .then(function(results){
+        results.forEach(function(dayMap){Object.keys(dayMap).forEach(function(id){rainMap[id]=(rainMap[id]||0)+(dayMap[id]||0);});});
+        loadWindow(idx+WINDOW);
+      })
+      .catch(function(e){console.warn('[ARPA region]',e.message);loadWindow(idx+WINDOW);});
+  }
+  loadWindow(0);
+}
+
+// ─── Wrapper Open-Meteo → callback ───────────────────────────
+function loadOpenMeteoRegion(stations,pastDate,nowDate,labelPeriodo,cb){
+  var msRange=nowDate.getTime()-pastDate.getTime();
+  var BATCH=100;
+  var batches=[];
+  for(var i=0;i<stations.length;i+=BATCH) batches.push(stations.slice(i,i+BATCH));
+  var results={};
+  var pending=batches.length;
+  if(pending===0){cb([]);return;}
+  function onBatchDone(){
+    pending--;
+    if(pending>0) return;
+    var out=stations.map(function(s){return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,mm:results[s.n]||0};});
+    cb(out);
+  }
+  function fmtD(d){var p=function(n){return String(n).padStart(2,'0');};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+  batches.forEach(function(batch){
+    var lats=batch.map(function(s){return s.lat;}).join(',');
+    var lons=batch.map(function(s){return s.lon;}).join(',');
+    var startDate=fmtD(pastDate);var endDate=fmtD(nowDate);
+    var days=Math.ceil(msRange/(24*3600000));
+    var isHourly=msRange<2*24*3600000;
+    var cutoff=new Date(new Date().getTime()-6*24*3600000);
+    var urls=[];
+    if(isHourly){
+      urls.push('https://api.open-meteo.com/v1/forecast?latitude='+lats+'&longitude='+lons+'&hourly=precipitation&timezone=Europe%2FRome&past_days=3&forecast_days=1');
+    } else if(days<=92){
+      urls.push('https://api.open-meteo.com/v1/forecast?latitude='+lats+'&longitude='+lons+'&daily=precipitation_sum&timezone=Europe%2FRome&past_days='+days+'&forecast_days=0');
+    } else if(nowDate<=cutoff){
+      urls.push('https://archive-api.open-meteo.com/v1/archive?latitude='+lats+'&longitude='+lons+'&start_date='+startDate+'&end_date='+endDate+'&daily=precipitation_sum&timezone=Europe%2FRome');
+    } else {
+      urls.push('https://archive-api.open-meteo.com/v1/archive?latitude='+lats+'&longitude='+lons+'&start_date='+startDate+'&end_date='+fmtD(cutoff)+'&daily=precipitation_sum&timezone=Europe%2FRome');
+      urls.push('https://api.open-meteo.com/v1/forecast?latitude='+lats+'&longitude='+lons+'&daily=precipitation_sum&timezone=Europe%2FRome&past_days=6&forecast_days=0');
+    }
+    var acc={};
+    function processOM(data){
+      var arr=Array.isArray(data)?data:[data];
+      arr.forEach(function(loc,i){
+        var st=batch[i];if(!st)return;
+        if(isHourly){
+          var hourly=loc.hourly;if(!hourly||!hourly.time)return;
+          var total=0;
+          function toLocalISO(d){var p=function(n){return String(n).padStart(2,'0');};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());}
+          var pastStr=toLocalISO(new Date(pastDate.getTime()-3600000));
+          var nowStr=toLocalISO(new Date(nowDate.getTime()+3600000));
+          for(var j=0;j<hourly.time.length;j++){
+            var tStr=hourly.time[j].substring(0,16);
+            if(tStr>=pastStr&&tStr<=nowStr){var v=parseFloat(hourly.precipitation[j]);if(!isNaN(v)&&v>0)total+=v;}
+          }
+          acc[st.n]=(acc[st.n]||0)+total;
+        } else {
+          var daily=loc.daily;if(!daily||!daily.time)return;
+          for(var j=0;j<daily.time.length;j++){
+            if(daily.time[j]>=startDate&&daily.time[j]<=endDate){var v=parseFloat(daily.precipitation_sum[j]);if(!isNaN(v)&&v>0)acc[st.n]=(acc[st.n]||0)+v;}
+          }
+        }
+      });
+    }
+    urls.reduce(function(chain,url){
+      return chain.then(function(){return fetch(url);}).then(function(r){if(!r.ok)throw new Error('OM '+r.status);return r.json();}).then(function(data){processOM(data);});
+    },Promise.resolve())
+    .then(function(){batch.forEach(function(s){var t=acc[s.n]||0;results[s.n]=t<0.5?0:Math.round(t*10)/10;});onBatchDone();})
+    .catch(function(e){console.warn('OM error:',e.message);batch.forEach(function(s){results[s.n]=0;});onBatchDone();});
+  });
+}
 // ═══════════════════════════════════════════════════════════════
 var GEOJSON_URL='https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson';
 var geojsonCache=null;
@@ -1312,6 +1554,8 @@ function loadGeoJSONOnce(cb){
     .catch(function(){geojsonCache={features:[]};cb(geojsonCache);});
 }
 
+var regionBorders={}; // cache layer bordi per regione
+
 function setRegionBorder(regionKey,cb){
   loadGeoJSONOnce(function(data){
     var cfg=REGIONS[regionKey]||REGIONS.lombardia;
@@ -1322,15 +1566,18 @@ function setRegionBorder(regionKey,cb){
       if(n.indexOf(filter)>=0) feat=f;
     });
 
-    // Rimuovi bordo precedente
+    // Rimuovi solo il bordo di questa regione se esiste già
+    if(regionBorders[regionKey]){map.removeLayer(regionBorders[regionKey]);delete regionBorders[regionKey];}
+    // (legacy) rimuovi regionBorder singolo se presente
     if(regionBorder){map.removeLayer(regionBorder);regionBorder=null;}
 
     if(feat){
-      regionBorder=L.geoJSON(feat,{
+      var layer=L.geoJSON(feat,{
         style:{color:'#1b3f6e',weight:1.5,opacity:0.6,fill:false}
       }).addTo(map);
+      regionBorders[regionKey]=layer;
+      regionBorder=layer; // compatibilità
 
-      // Salva rings per IDW
       var rings=[];
       var geom=feat.geometry;
       var polys=geom.type==='MultiPolygon'?geom.coordinates:[geom.coordinates];
@@ -1338,6 +1585,18 @@ function setRegionBorder(regionKey,cb){
       regionRings[regionKey]=rings;
     }
     cb();
+  });
+}
+
+// Carica i confini di tutte le regioni attive in parallelo
+function loadAllBorders(regionKeys, cb){
+  var pending=regionKeys.length;
+  if(pending===0){cb();return;}
+  regionKeys.forEach(function(rk){
+    setRegionBorder(rk,function(){
+      pending--;
+      if(pending===0) cb();
+    });
   });
 }
 
@@ -1381,10 +1640,30 @@ function switchRegion(regionKey){
   });
 }
 
-document.querySelectorAll('.rtab').forEach(function(tab){
-  tab.addEventListener('click',function(){
-    if(isLoading) return;
-    switchRegion(this.dataset.region);
+// Listener checkbox regioni
+document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(cb){
+  cb.addEventListener('change',function(){
+    var active=getActiveRegions();
+    // Almeno una regione deve essere attiva
+    if(active.length===0){this.checked=true;return;}
+    // Carica/rimuovi bordi
+    var rk=this.value;
+    if(this.checked){
+      setRegionBorder(rk,function(){
+        // Mostra stazioni di default per la nuova regione
+        addDefaultMarkersForRegion(rk);
+      });
+    } else {
+      if(regionBorders[rk]){map.removeLayer(regionBorders[rk]);delete regionBorders[rk];}
+    }
+    // Se c'era un periodo attivo, ricarica
+    if(currentPast&&currentNow){
+      loadData(currentPast,currentNow,currentLabel);
+    } else {
+      // Ricarica solo i marker di default
+      clearMarkers();
+      getActiveRegions().forEach(function(r){addDefaultMarkersForRegion(r);});
+    }
   });
 });
 
@@ -1494,8 +1773,8 @@ window.addEventListener('resize', function(){
 // ═══════════════════════════════════════════════════════════════
 // AVVIO
 // ═══════════════════════════════════════════════════════════════
-setRegionBorder('lombardia',function(){
-  // Prima carica l'elenco ufficiale stazioni ARPA, poi mostra la mappa
+// Carica confini di tutte le regioni attive all'avvio, poi stazioni
+loadAllBorders(['lombardia','piemonte'],function(){
   document.getElementById('lmsg').textContent='Caricamento stazioni ARPA…';
   var stUrl='/.netlify/functions/arpa?endpoint=nf78-nj6b.json&$limit=500&$select=idsensore,nomestazione,lat,lng,quota,provincia&$where=tipologia=%27Precipitazione%27';
   fetch(stUrl)
@@ -1505,17 +1784,10 @@ setRegionBorder('lombardia',function(){
       data.forEach(function(s){
         var lat=parseFloat(s.lat),lon=parseFloat(s.lng);
         if(!isNaN(lat)&&!isNaN(lon)&&lat>44&&lat<47&&lon>7&&lon<12){
-          stazioni.push({
-            n:s.nomestazione||'—',
-            lat:lat,lon:lon,
-            q:parseInt(s.quota)||0,
-            p:s.provincia||'—',
-            idsensore:s.idsensore  // salva per usarlo nelle query misure
-          });
+          stazioni.push({n:s.nomestazione||'—',lat:lat,lon:lon,q:parseInt(s.quota)||0,p:s.provincia||'—',idsensore:s.idsensore});
         }
       });
       stazioni=selectUniform(stazioni,200);
-      // Salva anche l'idsensore per usarlo nelle query
       if(stazioni.length>=5){
         ARPA_STATIONS=stazioni;
         console.log('[ARPA] Stazioni caricate:',stazioni.length);
@@ -1533,8 +1805,9 @@ setRegionBorder('lombardia',function(){
     });
 });
 
-function loadDefaultMarkers(){
-  var stazioni=ARPA_STATIONS||LOMBARDIA_STATIONS;
+function addDefaultMarkersForRegion(regionKey){
+  var cfg=REGIONS[regionKey];
+  var stazioni=(regionKey==='lombardia')?(ARPA_STATIONS||LOMBARDIA_STATIONS):(cfg?cfg.stations:[]);
   stazioni.forEach(function(s){
     var m=L.circleMarker([s.lat,s.lon],{
       radius:5,fillColor:'#fff',fillOpacity:0.9,
@@ -1550,7 +1823,7 @@ function loadDefaultMarkers(){
         document.getElementById('tt-prov').textContent=st.p;
         document.getElementById('tt-quota').textContent=st.q+' m slm';
         document.getElementById('tt-rank').textContent='seleziona un periodo';
-        document.getElementById('tt-fonte').textContent='ARPA Lombardia';
+        document.getElementById('tt-fonte').textContent=cfg?cfg.fonte:'—';
         posTooltip(cx,cy);
         tooltip.style.display='block';
       }
@@ -1561,6 +1834,10 @@ function loadDefaultMarkers(){
       mk.on('touchend',function(e){e.originalEvent.stopPropagation();});
     }(m,s));
   });
+}
+
+function loadDefaultMarkers(){
+  getActiveRegions().forEach(function(rk){addDefaultMarkersForRegion(rk);});
 }
 
 }());
