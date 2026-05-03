@@ -1,6 +1,6 @@
 name: Raccolta dati ARPA Piemonte
 
-"on":
+on:
   schedule:
     - cron: '55 22 * * *'
   workflow_dispatch:
