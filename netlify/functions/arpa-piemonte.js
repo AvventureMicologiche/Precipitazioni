@@ -1,91 +1,86 @@
-const fs = require('fs');
+const fs   = require('fs');
 const path = require('path');
+
+const API_BASE = 'https://utility.arpa.piemonte.it/api_realtime';
 
 exports.handler = async function(event) {
   const params = event.queryStringParameters || {};
-  const type = params.type || 'realtime'; // 'realtime' | 'storico' | 'stazioni'
+  const type   = params.type || 'anag';
 
   try {
 
     // ── STORICO: serve file JSON dal repo data/piemonte/YYYY-MM-DD.json ──
-    if (type === 'storico') {
-      const date = params.date; // YYYY-MM-DD
-      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        return { statusCode: 400, headers: cors(), body: JSON.stringify({ error: 'date param required (YYYY-MM-DD)' }) };
+    if(type === 'storico'){
+      const date = params.date;
+      if(!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)){
+        return { statusCode: 400, headers: cors(), body: JSON.stringify({error:'date param required'}) };
       }
       const filePath = path.join(__dirname, '..', '..', 'data', 'piemonte', `${date}.json`);
-      if (!fs.existsSync(filePath)) {
-        return { statusCode: 404, headers: cors(), body: JSON.stringify({ error: 'no data', date }) };
+      if(!fs.existsSync(filePath)){
+        return { statusCode: 404, headers: cors(), body: JSON.stringify({error:'no data', date}) };
       }
       const data = fs.readFileSync(filePath, 'utf8');
       return {
         statusCode: 200,
-        headers: { ...cors(), 'Content-Type': 'application/json', 'Cache-Control': 'public, s-maxage=86400' },
+        headers: { ...cors(), 'Content-Type':'application/json', 'Cache-Control':'public, s-maxage=86400' },
         body: data
       };
     }
 
-    // ── INFO: ritorna la data del primo giorno disponibile nel database ──
-    if (type === 'info') {
+    // ── INFO: prima e ultima data disponibile nel database ──
+    if(type === 'info'){
       const dataDir = path.join(__dirname, '..', '..', 'data', 'piemonte');
-      let firstDate = null;
-      let lastDate = null;
-      let count = 0;
-      if (fs.existsSync(dataDir)) {
+      let firstDate = null, lastDate = null, count = 0;
+      if(fs.existsSync(dataDir)){
         const files = fs.readdirSync(dataDir)
           .filter(f => /^\d{4}-\d{2}-\d{2}\.json$/.test(f))
           .sort();
         count = files.length;
-        if (files.length > 0) {
-          firstDate = files[0].replace('.json', '');
-          lastDate = files[files.length - 1].replace('.json', '');
+        if(files.length > 0){
+          firstDate = files[0].replace('.json','');
+          lastDate  = files[files.length-1].replace('.json','');
         }
       }
       return {
         statusCode: 200,
-        headers: { ...cors(), 'Content-Type': 'application/json' },
+        headers: { ...cors(), 'Content-Type':'application/json' },
         body: JSON.stringify({ firstDate, lastDate, count })
       };
     }
 
-    // ── REALTIME: proxy verso API ARPA Piemonte ──
-    // endpoint: stazioni o misure
-    const apiBase = 'https://utility.arpa.piemonte.it/api_realtime';
-    let url;
-
-    if (type === 'stazioni') {
-      // Lista stazioni pluviometriche
-      url = `${apiBase}/stazioni/?id_sensore_type=PREC&format=json`;
-    } else {
-      // Misure precipitazione ultime N ore (default 24h)
-      const ore = parseInt(params.ore) || 24;
-      url = `${apiBase}/misure/?id_sensore_type=PREC&ore=${ore}&format=json`;
+    // ── ANAGRAFICA stazioni ──
+    if(type === 'anag'){
+      const res  = await fetch(`${API_BASE}/pie_anag?page_size=10000`, { headers:{Accept:'application/json'} });
+      const data = await res.text();
+      return {
+        statusCode: res.status,
+        headers: { ...cors(), 'Content-Type':'application/json', 'Cache-Control':'public, s-maxage=3600' },
+        body: data
+      };
     }
 
-    const response = await fetch(url, {
-      headers: { 'Accept': 'application/json' }
-    });
-    const data = await response.text();
+    // ── DATI precipitazione (realtime) ──
+    if(type === 'data_pie'){
+      const dateFrom = params.date_from || '';
+      const dateTo   = params.date_to   || '';
+      const page     = params.page      || '1';
+      const url = `${API_BASE}/data_pie?date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}&page=${page}&page_size=10000`;
+      const res  = await fetch(url, { headers:{Accept:'application/json'} });
+      const data = await res.text();
+      return {
+        statusCode: res.status,
+        headers: { ...cors(), 'Content-Type':'application/json', 'Cache-Control':'public, s-maxage=300' },
+        body: data
+      };
+    }
 
-    return {
-      statusCode: response.status,
-      headers: {
-        ...cors(),
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, s-maxage=300'
-      },
-      body: data
-    };
+    return { statusCode: 400, headers: cors(), body: JSON.stringify({error:'unknown type: '+type}) };
 
-  } catch(error) {
-    return {
-      statusCode: 500,
-      headers: cors(),
-      body: JSON.stringify({ error: error.message })
-    };
+  } catch(error){
+    return { statusCode: 500, headers: cors(), body: JSON.stringify({error: error.message}) };
   }
 };
 
-function cors() {
+function cors(){
   return { 'Access-Control-Allow-Origin': '*' };
 }
