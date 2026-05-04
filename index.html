@@ -23,35 +23,29 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
   background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
   white-space:nowrap;flex-shrink:0}
 
-/* ── Selettore regioni — centrato nell'header ── */
-.region-selector{
-  display:flex;align-items:center;gap:14px;
-  position:absolute;left:50%;transform:translateX(-50%);
-}
-.region-selector-label{font-size:14px;font-weight:600;opacity:.9;white-space:nowrap;color:#fff;}
-.rcheck-wrap{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;}
+/* ── Selettore regioni nel pannello ── */
+.panel-region-selector{padding:4px 0 6px 0;}
+.panel-region-title{font-size:11px;font-weight:700;color:#555;
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.panel-region-checks{display:flex;gap:16px;align-items:center;}
+.panel-divider{border:none;border-top:1px solid #e8e8e8;margin:8px 0 10px 0;}
+.rcheck-wrap{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;}
 .rcheck-wrap input[type=checkbox]{display:none;}
 .rcheck-box{
-  width:18px;height:18px;border-radius:4px;flex-shrink:0;
-  background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.6);
+  width:20px;height:20px;border-radius:4px;flex-shrink:0;
+  background:#fff;border:2px solid #ccc;
   display:flex;align-items:center;justify-content:center;
   transition:all .15s;
 }
 .rcheck-box::after{content:'';display:none;}
-.rcheck-wrap input:checked ~ .rcheck-box{background:#fff;border-color:#fff;}
+.rcheck-wrap input:checked ~ .rcheck-box{background:#1b3f6e;border-color:#1b3f6e;}
 .rcheck-wrap input:checked ~ .rcheck-box::after{
-  content:'✓';display:block;font-size:12px;font-weight:900;color:#1b3f6e;line-height:1;
+  content:'✓';display:block;font-size:13px;font-weight:900;color:#fff;line-height:1;
 }
-.rcheck-name{font-size:14px;font-weight:700;color:rgba(255,255,255,.8);transition:color .15s;}
-.rcheck-wrap input:checked ~ .rcheck-name{color:#fff;}
-.rcheck-wrap:hover .rcheck-box{border-color:#fff;background:rgba(255,255,255,.25);}
-.rcheck-wrap:hover .rcheck-name{color:#fff;}
-@media(max-width:700px){
-  .region-selector{position:static;transform:none;}
-  .region-selector-label{display:none;}
-  .rcheck-name{font-size:12px;}
-  .rcheck-box{width:16px;height:16px;}
-}
+.rcheck-name{font-size:14px;font-weight:600;color:#333;transition:color .15s;}
+.rcheck-wrap input:checked ~ .rcheck-name{color:#1b3f6e;font-weight:700;}
+.rcheck-wrap:hover .rcheck-box{border-color:#1b3f6e;}
+.rcheck-wrap:hover .rcheck-name{color:#1b3f6e;}
 
 /* ── Mappa (occupa tutto lo spazio rimanente) ── */
 #map-wrap{flex:1;position:relative;min-height:0;}
@@ -64,8 +58,35 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
   box-shadow:0 2px 12px rgba(0,0,0,.22);
   pointer-events:all;width:300px;
 }
-#time-panel{top:130px;padding:11px 13px;}
+#region-panel{
+  position:absolute;left:10px;top:58px;z-index:1000;
+  background:rgba(255,255,255,.96);border-radius:10px;
+  box-shadow:0 2px 12px rgba(0,0,0,.22);
+  pointer-events:all;width:300px;
+  padding:11px 13px;
+}
+#time-panel{top:200px;padding:11px 13px;}
 #legend-panel{padding:11px 14px;display:none;}
+
+/* Checkbox nel pannello regioni — stile identico a tp-btn */
+.rcheck-wrap{display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;user-select:none;}
+.rcheck-wrap input[type=checkbox]{display:none;}
+.rcheck-box{display:none;}
+.rcheck-name{
+  display:block;
+  background:#f0f4fb;border:1px solid #d0d8e8;border-radius:5px;
+  color:#1b3f6e;font-size:13px;font-weight:600;
+  padding:7px 4px;text-align:center;
+  cursor:pointer;transition:background .15s,border-color .15s;
+  min-width:80px;
+}
+.rcheck-wrap input:checked ~ .rcheck-name{
+  background:#1b3f6e;border-color:#1b3f6e;color:#fff;font-weight:700;
+}
+.rcheck-wrap:hover .rcheck-name{background:#dce6f7;border-color:#1b3f6e;}
+.rcheck-wrap input:checked + .rcheck-box + .rcheck-name:hover,
+.rcheck-wrap:hover input:checked ~ .rcheck-name{background:#234f8a;}
 
 /* Pulsanti periodo */
 .tp-title{font-size:14px;font-weight:700;color:#1b3f6e;
@@ -73,6 +94,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
   display:flex;align-items:center;gap:5px}
 .tp-grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:4px}
 .tp-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:4px}
+.tp-grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;}
 .tp-btn{background:#f0f4fb;border:1px solid #d0d8e8;border-radius:5px;
   font-size:14px;font-weight:600;color:#1b3f6e;
   padding:7px 2px;text-align:center;cursor:pointer;
@@ -157,28 +179,6 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
 }
 
 /* ── Frecce tutorial ── */
-.tutorial-arrow{
-  position:fixed;
-  z-index:9998;
-  pointer-events:none;
-  display:flex;align-items:center;justify-content:center;
-  transition:opacity .4s;
-  animation:tutorialBounceV 0.8s ease-in-out infinite alternate;
-}
-.tutorial-arrow.arr-right{
-  animation:tutorialBounceH 0.8s ease-in-out infinite alternate;
-}
-.tutorial-arrow.hidden{opacity:0;}
-@keyframes tutorialBounceV{
-  from{transform:translateY(0);}
-  to{transform:translateY(-10px);}
-}
-@keyframes tutorialBounceH{
-  from{transform:translateX(0);}
-  to{transform:translateX(-10px);}
-}
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:10px;z-index:9999}
 .spinner{width:36px;height:36px;border:3px solid #eee;
   border-top-color:#1b3f6e;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -192,7 +192,8 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
    TABLET (601-900px)
    ══════════════════════════════════════ */
 @media(min-width:601px) and (max-width:900px){
-  #time-panel{width:240px;top:90px;}
+  #region-panel{width:240px;top:58px;}
+  #time-panel{width:240px;top:160px;}
   #legend-panel{width:240px;}
   .tp-btn{font-size:11px;padding:5px 2px;}
   .sv{font-size:15px;}
@@ -227,6 +228,22 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
     overflow-y:auto;
     transform:translateY(calc(100% - 44px));
     transition:transform .28s cubic-bezier(.4,0,.2,1);
+  }
+  /* Pannello regioni: top sheet fisso sotto header */
+  #region-panel{
+    position:fixed !important;
+    left:0 !important; right:0 !important; top:46px !important;
+    width:100% !important;
+    border-radius:0 0 14px 14px !important;
+    box-shadow:0 4px 12px rgba(0,0,0,.18) !important;
+    padding:8px 14px 10px !important;
+    z-index:1500 !important;
+    display:flex;align-items:center;gap:16px;
+  }
+  #region-panel .tp-title{margin-bottom:0;font-size:12px;}
+  #region-panel .tp-content{
+    display:flex !important;flex-direction:row;gap:16px;align-items:center;
+    padding-top:0 !important;
   }
   /* Handle + titolo sempre visibili (48px) */
   .tp-handle{display:none;} /* hidden desktop, shown mobile */
@@ -284,62 +301,6 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
 </head>
 <body>
 
-<!-- Freccia 1: punta SU verso le checkbox regioni -->
-<div class="tutorial-arrow" id="arr-regions">
-  <svg width="50" height="65" viewBox="0 0 50 65" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#ff4422"/>
-        <stop offset="100%" style="stop-color:#bb0000"/>
-      </linearGradient>
-      <linearGradient id="g1dark" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" style="stop-color:#990000"/>
-        <stop offset="100%" style="stop-color:#660000"/>
-      </linearGradient>
-      <filter id="sh1">
-        <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#440000" flood-opacity="0.6"/>
-      </filter>
-    </defs>
-    <g filter="url(#sh1)">
-      <!-- Faccia frontale -->
-      <path d="M25 3 L47 32 L36 32 L36 62 L14 62 L14 32 L3 32 Z" fill="url(#g1)"/>
-      <!-- Lato destro scuro per volume 3D -->
-      <path d="M47 32 L36 32 L36 62 L40 58 L40 36 L50 36 Z" fill="url(#g1dark)" opacity="0.85"/>
-      <!-- Riflesso luce in alto a sinistra -->
-      <path d="M25 3 L14 32 L21 32 L25 22 Z" fill="white" opacity="0.25"/>
-      <path d="M14 32 L14 48 L18 48 L18 32 Z" fill="white" opacity="0.15"/>
-    </g>
-  </svg>
-</div>
-
-<!-- Freccia 2: punta a SINISTRA verso il pannello periodo -->
-<div class="tutorial-arrow arr-right hidden" id="arr-period">
-  <svg width="65" height="50" viewBox="0 0 65 50" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g2" x1="100%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" style="stop-color:#ff4422"/>
-        <stop offset="100%" style="stop-color:#bb0000"/>
-      </linearGradient>
-      <linearGradient id="g2dark" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" style="stop-color:#990000"/>
-        <stop offset="100%" style="stop-color:#660000"/>
-      </linearGradient>
-      <filter id="sh2">
-        <feDropShadow dx="-2" dy="4" stdDeviation="4" flood-color="#440000" flood-opacity="0.6"/>
-      </filter>
-    </defs>
-    <g filter="url(#sh2)">
-      <!-- Faccia frontale -->
-      <path d="M3 25 L32 3 L32 14 L62 14 L62 36 L32 36 L32 47 Z" fill="url(#g2)"/>
-      <!-- Lato inferiore scuro per volume 3D -->
-      <path d="M32 36 L62 36 L62 40 L36 40 L36 47 L32 47 Z" fill="url(#g2dark)" opacity="0.85"/>
-      <!-- Riflesso -->
-      <path d="M3 25 L32 3 L32 14 L16 14 Z" fill="white" opacity="0.25"/>
-      <path d="M32 14 L48 14 L48 18 L32 18 Z" fill="white" opacity="0.15"/>
-    </g>
-  </svg>
-</div>
-
 <div id="loader">
   <div class="spinner"></div>
   <div id="lmsg">Caricamento mappa…</div>
@@ -353,19 +314,6 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
       <h1>Precipitazioni Nord Italia <span style="font-size:10px;font-weight:400;opacity:.6;letter-spacing:.05em;">(BETA V2.0)</span></h1>
       <div class="hdr-sub" id="datehdr">Seleziona il periodo</div>
     </div>
-  </div>
-  <div class="region-selector">
-    <span class="region-selector-label">Clicca e scegli le regioni da visualizzare:</span>
-    <label class="rcheck-wrap">
-      <input type="checkbox" id="chk-lombardia" value="lombardia">
-      <span class="rcheck-box"></span>
-      <span class="rcheck-name">Lombardia</span>
-    </label>
-    <label class="rcheck-wrap">
-      <input type="checkbox" id="chk-piemonte" value="piemonte">
-      <span class="rcheck-box"></span>
-      <span class="rcheck-name">Piemonte</span>
-    </label>
   </div>
   <div id="badge">–</div>
 </header>
@@ -406,6 +354,29 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
     </a>
 
     <!-- Pannelli: su desktop sovrapposti alla mappa via absolute -->
+
+    <!-- Pannello regioni: gemello del pannello periodo -->
+    <div id="region-panel">
+      <div class="tp-handle" id="rp-handle">
+        <div class="tp-handle-bar"></div>
+        <div class="tp-title">🗺 Seleziona regioni</div>
+      </div>
+      <div class="tp-content">
+        <div class="tp-grid2">
+          <label class="rcheck-wrap">
+            <input type="checkbox" id="chk-lombardia" value="lombardia">
+            <span class="rcheck-box"></span>
+            <span class="rcheck-name">Lombardia</span>
+          </label>
+          <label class="rcheck-wrap">
+            <input type="checkbox" id="chk-piemonte" value="piemonte">
+            <span class="rcheck-box"></span>
+            <span class="rcheck-name">Piemonte</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
     <div id="time-panel">
       <!-- Handle: sempre visibile, tap per aprire/chiudere -->
       <div class="tp-handle" id="tp-handle">
@@ -2038,77 +2009,6 @@ window.addEventListener('resize', function(){
   setTimeout(initMobile, 200);
 }());
 
-// ═══════════════════════════════════════════════════════════════
-// TUTORIAL FRECCE
-// ═══════════════════════════════════════════════════════════════
-(function(){
-  var arrRegions = document.getElementById('arr-regions');
-  var arrPeriod  = document.getElementById('arr-period');
-  var tutorialDone = false;
-
-  function positionArrows(){
-    // Freccia 1: sotto le checkbox, centrata TRA le due regioni
-    var chk1 = document.getElementById('chk-lombardia');
-    var chk2 = document.getElementById('chk-piemonte');
-    if(chk1 && chk2 && arrRegions){
-      var r1 = chk1.closest('.rcheck-wrap').getBoundingClientRect();
-      var r2 = chk2.closest('.rcheck-wrap').getBoundingClientRect();
-      var centerX = (r1.right + r2.left) / 2;
-      var bottomY = Math.max(r1.bottom, r2.bottom);
-      arrRegions.style.left = (centerX - 24) + 'px';
-      arrRegions.style.top  = (bottomY + 4) + 'px';
-    }
-
-    // Freccia 2: a destra del pannello periodo, punta a SINISTRA
-    var tp = document.getElementById('time-panel');
-    if(tp && arrPeriod){
-      var r2 = tp.getBoundingClientRect();
-      arrPeriod.style.left = (r2.right + 6) + 'px';
-      arrPeriod.style.top  = (r2.top + r2.height/2 - 24) + 'px';
-    }
-  }
-
-  function hideTutorialArrow1(){
-    arrRegions.classList.add('hidden');
-    setTimeout(function(){
-      arrRegions.style.display='none';
-    }, 500);
-  }
-
-  function showTutorialArrow2(){
-    arrPeriod.classList.remove('hidden');
-    positionArrows();
-  }
-
-  function hideTutorialArrow2(){
-    if(tutorialDone) return;
-    tutorialDone = true;
-    arrPeriod.classList.add('hidden');
-    setTimeout(function(){
-      arrPeriod.style.display='none';
-    }, 500);
-  }
-
-  // Posiziona all'avvio e su resize
-  window.addEventListener('load', function(){ setTimeout(positionArrows, 300); });
-  window.addEventListener('resize', positionArrows);
-  setTimeout(positionArrows, 600);
-
-  // Freccia 1 scompare alla prima checkbox spuntata
-  document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(cb){
-    cb.addEventListener('change', function(){
-      if(document.querySelector('.rcheck-wrap input[type=checkbox]:checked')){
-        hideTutorialArrow1();
-        setTimeout(showTutorialArrow2, 400);
-      }
-    });
-  });
-
-  // Freccia 2 scompare al click su qualsiasi bottone periodo
-  document.querySelectorAll('.tp-btn, .tp-custom-btn, #cd-apply').forEach(function(btn){
-    btn.addEventListener('click', hideTutorialArrow2);
-  });
-}());
 // Carica GeoJSON e stazioni ARPA in background, poi nasconde loader
 // I confini e le stazioni vengono mostrati solo quando l'utente seleziona una regione
 loadGeoJSONOnce(function(){
