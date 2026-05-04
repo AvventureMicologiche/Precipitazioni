@@ -65,7 +65,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
   pointer-events:all;width:300px;
   padding:11px 13px;
 }
-#time-panel{top:192px;padding:11px 13px;}
+#time-panel{top:182px;padding:11px 13px;}
 #legend-panel{padding:11px 14px;display:none;}
 
 /* Checkbox nel pannello regioni — stile identico a tp-btn */
@@ -508,21 +508,67 @@ var REGIONS = {
     geojsonFilter: 'veneto',
     dataSource: 'arpa_veneto',
     stations: [
-      {n:"Venezia",       lat:45.438,lon:12.335,q:2,   p:"VE"},
-      {n:"Verona",        lat:45.438,lon:11.002,q:59,  p:"VR"},
-      {n:"Padova",        lat:45.407,lon:11.868,q:12,  p:"PD"},
-      {n:"Vicenza",       lat:45.548,lon:11.546,q:39,  p:"VI"},
-      {n:"Treviso",       lat:45.671,lon:12.243,q:15,  p:"TV"},
-      {n:"Belluno",       lat:46.144,lon:12.218,q:389, p:"BL"},
-      {n:"Rovigo",        lat:45.071,lon:11.790,q:5,   p:"RO"},
-      {n:"Cortina",       lat:46.536,lon:12.136,q:1224,p:"BL"},
-      {n:"Asiago",        lat:45.874,lon:11.511,q:1001,p:"VI"},
-      {n:"Bassano",       lat:45.766,lon:11.735,q:129, p:"VI"},
-      {n:"Castelfranco",  lat:45.671,lon:11.928,q:42,  p:"TV"},
-      {n:"Conegliano",    lat:45.888,lon:12.297,q:72,  p:"TV"},
-      {n:"Este",          lat:45.226,lon:11.656,q:14,  p:"PD"},
-      {n:"Chioggia",      lat:45.219,lon:12.279,q:1,   p:"VE"},
-      {n:"Adria",         lat:45.054,lon:12.053,q:4,   p:"RO"}
+      {n:"Venezia",           lat:45.438,lon:12.335,q:2,   p:"VE"},
+      {n:"Verona",            lat:45.438,lon:11.002,q:59,  p:"VR"},
+      {n:"Padova",            lat:45.407,lon:11.868,q:12,  p:"PD"},
+      {n:"Vicenza",           lat:45.548,lon:11.546,q:39,  p:"VI"},
+      {n:"Treviso",           lat:45.671,lon:12.243,q:15,  p:"TV"},
+      {n:"Belluno",           lat:46.144,lon:12.218,q:389, p:"BL"},
+      {n:"Rovigo",            lat:45.071,lon:11.790,q:5,   p:"RO"},
+      {n:"Cortina",           lat:46.536,lon:12.136,q:1224,p:"BL"},
+      {n:"Asiago",            lat:45.874,lon:11.511,q:1001,p:"VI"},
+      {n:"Bassano del Grappa",lat:45.766,lon:11.735,q:129, p:"VI"},
+      {n:"Castelfranco V.",   lat:45.671,lon:11.928,q:42,  p:"TV"},
+      {n:"Conegliano",        lat:45.888,lon:12.297,q:72,  p:"TV"},
+      {n:"Este",              lat:45.226,lon:11.656,q:14,  p:"PD"},
+      {n:"Chioggia",          lat:45.219,lon:12.279,q:1,   p:"VE"},
+      {n:"Adria",             lat:45.054,lon:12.053,q:4,   p:"RO"},
+      {n:"Vittorio Veneto",   lat:45.989,lon:12.299,q:138, p:"TV"},
+      {n:"Montebelluna",      lat:45.777,lon:12.043,q:109, p:"TV"},
+      {n:"Mestre",            lat:45.491,lon:12.238,q:3,   p:"VE"},
+      {n:"Mogliano Veneto",   lat:45.562,lon:12.234,q:12,  p:"TV"},
+      {n:"San Donà di Piave", lat:45.629,lon:12.565,q:3,   p:"VE"},
+      {n:"Portogruaro",       lat:45.776,lon:12.836,q:8,   p:"VE"},
+      {n:"Eraclea",           lat:45.578,lon:12.678,q:3,   p:"VE"},
+      {n:"Jesolo",            lat:45.536,lon:12.641,q:2,   p:"VE"},
+      {n:"Mirano",            lat:45.496,lon:12.102,q:11,  p:"VE"},
+      {n:"Dolo",              lat:45.428,lon:12.077,q:6,   p:"VE"},
+      {n:"Monselice",         lat:45.238,lon:11.741,q:9,   p:"PD"},
+      {n:"Abano Terme",       lat:45.362,lon:11.789,q:14,  p:"PD"},
+      {n:"Cittadella",        lat:45.647,lon:11.784,q:49,  p:"PD"},
+      {n:"Camposampiero",     lat:45.574,lon:11.929,q:17,  p:"PD"},
+      {n:"Piazzola sul Brenta",lat:45.541,lon:11.837,q:26, p:"PD"},
+      {n:"Thiene",            lat:45.709,lon:11.476,q:65,  p:"VI"},
+      {n:"Schio",             lat:45.710,lon:11.356,q:89,  p:"VI"},
+      {n:"Valdagno",          lat:45.649,lon:11.302,q:219, p:"VI"},
+      {n:"Lonigo",            lat:45.385,lon:11.381,q:31,  p:"VI"},
+      {n:"Montecchio Mag.",   lat:45.505,lon:11.405,q:73,  p:"VI"},
+      {n:"Arzignano",         lat:45.516,lon:11.336,q:75,  p:"VI"},
+      {n:"Bussolengo",        lat:45.472,lon:10.856,q:68,  p:"VR"},
+      {n:"Legnago",           lat:45.192,lon:11.313,q:17,  p:"VR"},
+      {n:"San Bonifacio",     lat:45.394,lon:11.272,q:31,  p:"VR"},
+      {n:"Soave",             lat:45.418,lon:11.246,q:55,  p:"VR"},
+      {n:"Bardolino",         lat:45.548,lon:10.726,q:65,  p:"VR"},
+      {n:"Malcesine",         lat:45.763,lon:10.810,q:90,  p:"VR"},
+      {n:"Boscochiesanuova",  lat:45.627,lon:11.055,q:1027,p:"VR"},
+      {n:"Ala",               lat:45.758,lon:11.004,q:169, p:"TN"},
+      {n:"Feltre",            lat:46.018,lon:11.905,q:340, p:"BL"},
+      {n:"Agordo",            lat:46.274,lon:12.039,q:611, p:"BL"},
+      {n:"Pieve di Cadore",   lat:46.427,lon:12.369,q:879, p:"BL"},
+      {n:"Longarone",         lat:46.273,lon:12.298,q:478, p:"BL"},
+      {n:"Auronzo di Cadore", lat:46.559,lon:12.443,q:864, p:"BL"},
+      {n:"Taibon Agordino",   lat:46.266,lon:11.988,q:641, p:"BL"},
+      {n:"Cencenighe Agord.", lat:46.343,lon:12.059,q:773, p:"BL"},
+      {n:"Vallada Agordina",  lat:46.378,lon:11.965,q:1014,p:"BL"},
+      {n:"Comelico Sup.",     lat:46.595,lon:12.487,q:1218,p:"BL"},
+      {n:"Oderzo",            lat:45.779,lon:12.488,q:15,  p:"TV"},
+      {n:"Spresiano",         lat:45.786,lon:12.247,q:43,  p:"TV"},
+      {n:"Valdobbiadene",     lat:45.898,lon:11.998,q:255, p:"TV"},
+      {n:"Pieve di Soligo",   lat:45.900,lon:12.178,q:132, p:"TV"},
+      {n:"Ponte di Piave",    lat:45.722,lon:12.447,q:8,   p:"TV"},
+      {n:"Porto Tolle",       lat:44.961,lon:12.327,q:1,   p:"RO"},
+      {n:"Badia Polesine",    lat:45.094,lon:11.502,q:8,   p:"RO"},
+      {n:"Lendinara",         lat:45.081,lon:11.600,q:8,   p:"RO"}
     ]
   },
 
@@ -999,17 +1045,32 @@ function render(dati,fonte,labelPeriodo){
   },20);
 }
 
-function positionLegend(){
-  if(window.innerWidth<=600) return; // mobile: CSS gestisce posizione
+function positionPanels(){
+  if(window.innerWidth<=600) return;
+  var GAP=10;
+  var rp=document.getElementById('region-panel');
   var tp=document.getElementById('time-panel');
-  var tpB=tp.getBoundingClientRect().bottom;
-  var mapWrap=document.getElementById('map-wrap');
-  var mapT=mapWrap.getBoundingClientRect().top;
   var leg=document.getElementById('legend-panel');
-  leg.style.top=(tpB-mapT+10)+'px';
-  leg.style.left='10px';
-  leg.style.width='280px';
-  leg.style.borderRadius='10px';
+
+  // region-panel fisso a top:100px — leggo il suo offsetTop + offsetHeight
+  var rpBottom = rp.offsetTop + rp.offsetHeight;
+
+  // time-panel: GAP sotto region-panel
+  tp.style.top=(rpBottom+GAP)+'px';
+
+  // legend-panel: GAP sotto time-panel (solo se visibile)
+  if(leg.style.display!=='none'){
+    var tpBottom = tp.offsetTop + tp.offsetHeight;
+    leg.style.top=(tpBottom+GAP)+'px';
+    leg.style.left='10px';
+    leg.style.width='300px';
+  }
+}
+
+function positionLegend(){
+  positionPanels();
+  // doppia chiamata per sicurezza dopo render
+  setTimeout(positionPanels, 30);
 }
 
 function setLoading(on){
@@ -2112,7 +2173,7 @@ document.getElementById('cd-apply').addEventListener('click',function(){
 
 // Ricalcola posizione su resize
 window.addEventListener('resize', function(){
-  if(document.getElementById('legend-panel').style.display!=='none') positionLegend();
+  positionPanels();
 });
 
 // ── Toggle pannello mobile ───────────────────────────────────────────────
