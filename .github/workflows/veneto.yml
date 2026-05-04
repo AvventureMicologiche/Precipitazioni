@@ -1,1 +1,21 @@
+name: Veneto
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 23 * * *'
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node .github/scripts/collect-veneto.js
+      - run: |
+          git config user.name "bot"
+          git config user.email "bot@bot.com"
+          git add data/veneto/
+          git diff --staged --quiet || git commit -m "veneto $(date -u +%Y-%m-%d)"
+          git push
 
