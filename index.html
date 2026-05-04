@@ -69,23 +69,20 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
 #legend-panel{padding:11px 14px;display:none;}
 
 /* Checkbox nel pannello regioni — stile identico a tp-btn */
-.rcheck-wrap{display:inline-flex;align-items:center;justify-content:center;
-  cursor:pointer;user-select:none;}
+.rcheck-wrap{display:flex;width:100%;cursor:pointer;user-select:none;}
 .rcheck-wrap input[type=checkbox]{display:none;}
 .rcheck-box{display:none;}
 .rcheck-name{
-  display:block;
+  display:block;width:100%;
   background:#f0f4fb;border:1px solid #d0d8e8;border-radius:5px;
   color:#1b3f6e;font-size:13px;font-weight:600;
   padding:7px 4px;text-align:center;
   cursor:pointer;transition:background .15s,border-color .15s;
-  min-width:80px;
 }
 .rcheck-wrap input:checked ~ .rcheck-name{
   background:#1b3f6e;border-color:#1b3f6e;color:#fff;font-weight:700;
 }
 .rcheck-wrap:hover .rcheck-name{background:#dce6f7;border-color:#1b3f6e;}
-.rcheck-wrap input:checked + .rcheck-box + .rcheck-name:hover,
 .rcheck-wrap:hover input:checked ~ .rcheck-name{background:#234f8a;}
 
 /* Pulsanti periodo */
@@ -94,6 +91,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
   display:flex;align-items:center;gap:5px}
 .tp-grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:4px}
 .tp-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:4px}
+.tp-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;}
 .tp-grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;}
 .tp-btn{background:#f0f4fb;border:1px solid #d0d8e8;border-radius:5px;
   font-size:14px;font-weight:600;color:#1b3f6e;
@@ -362,7 +360,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
         <div class="tp-title">🗺 Seleziona regioni</div>
       </div>
       <div class="tp-content">
-        <div class="tp-grid2">
+        <div class="tp-grid3">
           <label class="rcheck-wrap">
             <input type="checkbox" id="chk-lombardia" value="lombardia">
             <span class="rcheck-box"></span>
@@ -372,6 +370,11 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
             <input type="checkbox" id="chk-piemonte" value="piemonte">
             <span class="rcheck-box"></span>
             <span class="rcheck-name">Piemonte</span>
+          </label>
+          <label class="rcheck-wrap">
+            <input type="checkbox" id="chk-veneto" value="veneto">
+            <span class="rcheck-box"></span>
+            <span class="rcheck-name">Veneto</span>
           </label>
         </div>
       </div>
@@ -497,7 +500,31 @@ var REGIONS = {
     ]
   },
 
-  liguria: {
+  veneto: {
+    name: 'Veneto',
+    center: [45.6, 11.8], zoom: 8,
+    fonte: 'ARPAV (XML live)',
+    geojson: 'https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson',
+    geojsonFilter: 'veneto',
+    dataSource: 'arpa_veneto',
+    stations: [
+      {n:"Venezia",       lat:45.438,lon:12.335,q:2,   p:"VE"},
+      {n:"Verona",        lat:45.438,lon:11.002,q:59,  p:"VR"},
+      {n:"Padova",        lat:45.407,lon:11.868,q:12,  p:"PD"},
+      {n:"Vicenza",       lat:45.548,lon:11.546,q:39,  p:"VI"},
+      {n:"Treviso",       lat:45.671,lon:12.243,q:15,  p:"TV"},
+      {n:"Belluno",       lat:46.144,lon:12.218,q:389, p:"BL"},
+      {n:"Rovigo",        lat:45.071,lon:11.790,q:5,   p:"RO"},
+      {n:"Cortina",       lat:46.536,lon:12.136,q:1224,p:"BL"},
+      {n:"Asiago",        lat:45.874,lon:11.511,q:1001,p:"VI"},
+      {n:"Bassano",       lat:45.766,lon:11.735,q:129, p:"VI"},
+      {n:"Castelfranco",  lat:45.671,lon:11.928,q:42,  p:"TV"},
+      {n:"Conegliano",    lat:45.888,lon:12.297,q:72,  p:"TV"},
+      {n:"Este",          lat:45.226,lon:11.656,q:14,  p:"PD"},
+      {n:"Chioggia",      lat:45.219,lon:12.279,q:1,   p:"VE"},
+      {n:"Adria",         lat:45.054,lon:12.053,q:4,   p:"RO"}
+    ]
+  },
     name: 'Liguria',
     center: [44.4, 8.7], zoom: 9,
     fonte: 'Open-Meteo (ERA5 reanalysis)',
@@ -1405,6 +1432,8 @@ function loadData(pastDate,nowDate,labelPeriodo){
       loadARPALombardiaRegion(pastDate,nowDate,labelPeriodo,onRegionDone);
     } else if(source==='arpa_piemonte'){
       loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,onRegionDone);
+    } else if(source==='arpa_veneto'){
+      loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,onRegionDone);
     } else {
       loadOpenMeteoRegion(cfg.stations||[],pastDate,nowDate,labelPeriodo,onRegionDone);
     }
@@ -1750,8 +1779,103 @@ function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
     });
 }
 
-// ═══════════════════════════════════════════════════════════════
-// GEOJSON CONFINI
+// ─── ARPA Veneto → callback ───────────────────────────────────
+// XML pubblico: /api/risorse/data-meteo/xml/Ultime48ore.xml
+// Contiene dati ultime 48h. TYPE=PRECCUM → cumulata → max-min per giorno
+// Per storico >2 giorni: file JSON giornalieri dal repo (stesso schema Piemonte)
+function loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,cb){
+  var msRange=nowDate.getTime()-pastDate.getTime();
+  var TWO_DAYS=2*24*3600000;
+  var API_BASE='/.netlify/functions/arpa-veneto';
+
+  function fmtDate(d){
+    var p=function(n){return String(n).padStart(2,'0');};
+    return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  }
+
+  function getDays(from,to){
+    var days=[];
+    var d=new Date(from.getFullYear(),from.getMonth(),from.getDate());
+    var e=new Date(to.getFullYear(),to.getMonth(),to.getDate());
+    while(d<=e){days.push(fmtDate(new Date(d)));d.setDate(d.getDate()+1);}
+    return days;
+  }
+
+  // ── Realtime: ultime 48h via XML ARPAV ──────────────────────
+  if(msRange<=TWO_DAYS){
+    fetch(API_BASE+'?type=realtime')
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+      .then(function(data){
+        // Il proxy converte XML→JSON restituendo array stazioni
+        var output=[];
+        (data.stations||[]).forEach(function(s){
+          if(s.mm!==undefined && s.lat && s.lon){
+            // Filtra per date range richiesto
+            var mm=Math.round(s.mm*10)/10;
+            if(mm>300)mm=0;
+            output.push({n:s.name,lat:s.lat,lon:s.lon,q:s.quota||0,p:s.prov||'—',mm:mm<0.5?0:mm});
+          }
+        });
+        cb(output.length>=3?output:[]);
+      })
+      .catch(function(e){
+        console.warn('[ARPAV realtime] fallback Open-Meteo:',e.message);
+        loadOpenMeteoRegion(REGIONS.veneto.stations,pastDate,nowDate,labelPeriodo,cb);
+      });
+    return;
+  }
+
+  // ── Storico: file JSON giornalieri dal repo ──────────────────
+  var days=getDays(pastDate,nowDate);
+  var rainTot={};
+  var stMeta={};
+  var doneDays=0;
+
+  fetch(API_BASE+'?type=info')
+    .then(function(r){return r.ok?r.json():Promise.reject('info fail');})
+    .then(function(info){
+      var firstDate=info.firstDate;
+      if(firstDate && fmtDate(pastDate)<firstDate){
+        document.getElementById('tp-status').textContent='⚠️ Dati Veneto disponibili dal '+firstDate+' — periodo parziale';
+      }
+      var pending=days.length;
+      if(pending===0){cb([]);return;}
+      days.forEach(function(dateStr){
+        fetch(API_BASE+'?type=storico&date='+dateStr)
+          .then(function(r){if(r.status===404)return null;if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+          .then(function(data){
+            if(data&&data.stations){
+              data.stations.forEach(function(s){
+                var id=s.id||s.n;
+                if(!stMeta[id])stMeta[id]={n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p};
+                rainTot[id]=(rainTot[id]||0)+s.mm;
+              });
+            }
+          })
+          .catch(function(e){console.warn('[ARPAV storico] '+dateStr+':',e.message);})
+          .finally(function(){
+            doneDays++;
+            if(doneDays>=pending){
+              if(Object.keys(rainTot).length<5){
+                var firstAvail=info&&info.firstDate?info.firstDate:'oggi';
+                document.getElementById('tp-status').textContent='⚠️ Storico Veneto disponibile dal '+firstAvail+' — uso dati stimati';
+                loadOpenMeteoRegion(REGIONS.veneto.stations,pastDate,nowDate,labelPeriodo,cb);
+                return;
+              }
+              var output=Object.keys(rainTot).map(function(id){
+                var s=stMeta[id];
+                return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,mm:rainTot[id]<0.5?0:Math.round(rainTot[id]*10)/10};
+              });
+              cb(output);
+            }
+          });
+      });
+    })
+    .catch(function(e){
+      console.warn('[ARPAV] info fallito, uso Open-Meteo:',e.message);
+      loadOpenMeteoRegion(REGIONS.veneto.stations,pastDate,nowDate,labelPeriodo,cb);
+    });
+}
 // ═══════════════════════════════════════════════════════════════
 var GEOJSON_URL='https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson';
 var geojsonCache=null;
@@ -1851,7 +1975,8 @@ function switchRegion(regionKey){
 // ─── Centra mappa sulle regioni attive ───────────────────────
 var REGION_BOUNDS={
   lombardia: [[44.68, 8.50],[46.64,11.36]],
-  piemonte:  [[43.80, 6.63],[46.46, 9.22]]
+  piemonte:  [[43.80, 6.63],[46.46, 9.22]],
+  veneto:    [[44.79,10.63],[46.68,13.10]]
 };
 
 function fitMapToRegions(regionKeys){
