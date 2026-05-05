@@ -855,6 +855,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 // STATO
 // ═══════════════════════════════════════════════════════════════
 var activeRegions   = ['lombardia','piemonte']; // regioni con checkbox spuntata
+var currentRegion  = 'lombardia'; // ultima regione attiva per tooltip
 var ARPA_STATIONS    = null; // stazioni ARPA Lombardia
 var ARPA_PIE_STATIONS = null; // stazioni ARPA Piemonte (caricate al boot)
 var lombardiaRings = [];
@@ -1779,12 +1780,10 @@ function loadOpenMeteoRegion(stations,pastDate,nowDate,labelPeriodo,cb){
 }
 
 // ─── ARPA Piemonte → callback ─────────────────────────────────
-// ≤6 giorni: API realtime | >6 giorni: file storici JSON dal repo
-// Mostra avviso se lo storico non è ancora disponibile
 function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
   var msRange=nowDate.getTime()-pastDate.getTime();
   var ONE_DAY=24*3600000;
-  var API_BASE='/.netlify/functions/arpa-piemonte';
+  var GITHUB_RAW='https://raw.githubusercontent.com/AvventureMicologiche/Mappa-Precipitazioni-Nord/main/data/piemonte';
 
   function fmtDate(d){
     var p=function(n){return String(n).padStart(2,'0');};
@@ -1799,76 +1798,56 @@ function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
     return days;
   }
 
-  // ── Periodi orari (< 2 giorni): Open-Meteo è la fonte corretta ──
+  // Periodi brevi → Open-Meteo
   if(msRange < 2*ONE_DAY){
     loadOpenMeteoRegion(REGIONS.piemonte.stations,pastDate,nowDate,labelPeriodo,cb);
     return;
   }
 
-  // ── Storico: legge file JSON giornalieri dal repo ─────────────
+  // Storico: legge file JSON direttamente da GitHub raw
   var days=getDays(pastDate,nowDate);
-  var rainTot={}; // id → mm cumulati
-  var stMeta={}; // id → {n,lat,lon,q,p}
-  var missingDays=[];
+  var rainTot={};
+  var stMeta={};
   var doneDays=0;
+  var foundAny=false;
+  var pending=days.length;
+  if(pending===0){cb([]);return;}
 
-  // Prima controlla info sul database
-  fetch(API_BASE+'?type=info')
-    .then(function(r){return r.ok?r.json():Promise.reject('info fail');})
-    .then(function(info){
-      var firstDate=info.firstDate;
-      // Avvisa se il database non copre tutto il periodo richiesto
-      if(firstDate && fmtDate(pastDate)<firstDate){
-        var msg='⚠️ Dati Piemonte disponibili dal '+firstDate+' — periodo parziale';
-        document.getElementById('tp-status').textContent=msg;
-      }
-      // Carica ogni giorno disponibile
-      var pending=days.length;
-      if(pending===0){cb([]);return;}
-
-      days.forEach(function(dateStr){
-        fetch(API_BASE+'?type=storico&date='+dateStr)
-          .then(function(r){
-            if(r.status===404){missingDays.push(dateStr);return null;}
-            if(!r.ok)throw new Error('HTTP '+r.status);
-            return r.json();
-          })
-          .then(function(data){
-            if(data&&data.stations){
-              data.stations.forEach(function(s){
-                var id=s.id||s.n;
-                if(!stMeta[id]) stMeta[id]={n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p};
-                rainTot[id]=(rainTot[id]||0)+s.mm;
-              });
-            }
-          })
-          .catch(function(e){console.warn('[PIE storico] '+dateStr+':',e.message);})
-          .finally(function(){
-            doneDays++;
-            if(doneDays>=pending){
-              // Tutti i giorni caricati
-              if(Object.keys(rainTot).length<5){
-                // Nessun dato storico — fallback Open-Meteo con avviso
-                var firstAvail=info&&info.firstDate?info.firstDate:'oggi';
-                document.getElementById('tp-status').textContent=
-                  '⚠️ Storico Piemonte disponibile dal '+firstAvail+' — uso dati stimati';
-                loadOpenMeteoRegion(REGIONS.piemonte.stations,pastDate,nowDate,labelPeriodo,cb);
-                return;
-              }
-              var output=Object.keys(rainTot).map(function(id){
-                var s=stMeta[id];
-                return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
-                        mm:rainTot[id]<0.5?0:Math.round(rainTot[id]*10)/10};
-              });
-              cb(output);
-            }
+  days.forEach(function(dateStr){
+    fetch(GITHUB_RAW+'/'+dateStr+'.json')
+      .then(function(r){
+        if(r.status===404) return null;
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.json();
+      })
+      .then(function(data){
+        if(data&&data.stations){
+          foundAny=true;
+          data.stations.forEach(function(s){
+            var id=s.id||s.n;
+            if(!stMeta[id]) stMeta[id]={n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p};
+            rainTot[id]=(rainTot[id]||0)+s.mm;
           });
+        }
+      })
+      .catch(function(e){console.warn('[PIE storico] '+dateStr+':',e.message);})
+      .finally(function(){
+        doneDays++;
+        if(doneDays>=pending){
+          if(!foundAny){
+            document.getElementById('tp-status').textContent='⚠️ Storico Piemonte in costruzione — dati disponibili dal 3 mag 2026';
+            loadOpenMeteoRegion(REGIONS.piemonte.stations,pastDate,nowDate,labelPeriodo,cb);
+            return;
+          }
+          var output=Object.keys(rainTot).map(function(id){
+            var s=stMeta[id];
+            return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
+                    mm:rainTot[id]<0.5?0:Math.round(rainTot[id]*10)/10};
+          });
+          cb(output);
+        }
       });
-    })
-    .catch(function(e){
-      console.warn('[PIE] info fallito, uso Open-Meteo:',e.message);
-      loadOpenMeteoRegion(REGIONS.piemonte.stations,pastDate,nowDate,labelPeriodo,cb);
-    });
+  });
 }
 
 // ─── ARPA Veneto → callback ───────────────────────────────────
@@ -1878,7 +1857,7 @@ function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
 function loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,cb){
   var msRange=nowDate.getTime()-pastDate.getTime();
   var TWO_DAYS=2*24*3600000;
-  var API_BASE='/.netlify/functions/arpa-veneto';
+  var GITHUB_RAW='https://raw.githubusercontent.com/AvventureMicologiche/Mappa-Precipitazioni-Nord/main/data/veneto';
 
   function fmtDate(d){
     var p=function(n){return String(n).padStart(2,'0');};
@@ -1893,80 +1872,56 @@ function loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,cb){
     return days;
   }
 
-  // ── Realtime: ultime 48h via XML ARPAV ──────────────────────
+  // Periodi brevi → Open-Meteo (realtime proxy troppo lento)
   if(msRange<=TWO_DAYS){
-    fetch(API_BASE+'?type=realtime')
-      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
-      .then(function(data){
-        // Il proxy converte XML→JSON restituendo array stazioni
-        var output=[];
-        (data.stations||[]).forEach(function(s){
-          if(s.mm!==undefined && s.lat && s.lon){
-            // Filtra per date range richiesto
-            var mm=Math.round(s.mm*10)/10;
-            if(mm>300)mm=0;
-            output.push({n:s.name,lat:s.lat,lon:s.lon,q:s.quota||0,p:s.prov||'—',mm:mm<0.5?0:mm});
-          }
-        });
-        cb(output.length>=3?output:[]);
-      })
-      .catch(function(e){
-        console.warn('[ARPAV realtime] fallback Open-Meteo:',e.message);
-        loadOpenMeteoRegion(REGIONS.veneto.stations,pastDate,nowDate,labelPeriodo,cb);
-      });
+    loadOpenMeteoRegion(REGIONS.veneto.stations,pastDate,nowDate,labelPeriodo,cb);
     return;
   }
 
-  // ── Storico: file JSON giornalieri dal repo ──────────────────
+  // Storico: legge file JSON direttamente da GitHub raw
   var days=getDays(pastDate,nowDate);
   var rainTot={};
   var stMeta={};
   var doneDays=0;
+  var foundAny=false;
+  var pending=days.length;
+  if(pending===0){cb([]);return;}
 
-  fetch(API_BASE+'?type=info')
-    .then(function(r){return r.ok?r.json():Promise.reject('info fail');})
-    .then(function(info){
-      var firstDate=info.firstDate;
-      if(firstDate && fmtDate(pastDate)<firstDate){
-        document.getElementById('tp-status').textContent='⚠️ Dati Veneto disponibili dal '+firstDate+' — periodo parziale';
-      }
-      var pending=days.length;
-      if(pending===0){cb([]);return;}
-      days.forEach(function(dateStr){
-        fetch(API_BASE+'?type=storico&date='+dateStr)
-          .then(function(r){if(r.status===404)return null;if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
-          .then(function(data){
-            if(data&&data.stations){
-              data.stations.forEach(function(s){
-                var id=s.id||s.n;
-                if(!stMeta[id])stMeta[id]={n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p};
-                rainTot[id]=(rainTot[id]||0)+s.mm;
-              });
-            }
-          })
-          .catch(function(e){console.warn('[ARPAV storico] '+dateStr+':',e.message);})
-          .finally(function(){
-            doneDays++;
-            if(doneDays>=pending){
-              if(Object.keys(rainTot).length<5){
-                var firstAvail=info&&info.firstDate?info.firstDate:'oggi';
-                document.getElementById('tp-status').textContent='⚠️ Storico Veneto disponibile dal '+firstAvail+' — uso dati stimati';
-                loadOpenMeteoRegion(REGIONS.veneto.stations,pastDate,nowDate,labelPeriodo,cb);
-                return;
-              }
-              var output=Object.keys(rainTot).map(function(id){
-                var s=stMeta[id];
-                return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,mm:rainTot[id]<0.5?0:Math.round(rainTot[id]*10)/10};
-              });
-              cb(output);
-            }
+  days.forEach(function(dateStr){
+    fetch(GITHUB_RAW+'/'+dateStr+'.json')
+      .then(function(r){
+        if(r.status===404) return null;
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.json();
+      })
+      .then(function(data){
+        if(data&&data.stations){
+          foundAny=true;
+          data.stations.forEach(function(s){
+            var id=s.id||s.n;
+            if(!stMeta[id]) stMeta[id]={n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p};
+            rainTot[id]=(rainTot[id]||0)+s.mm;
           });
+        }
+      })
+      .catch(function(e){console.warn('[VEN storico] '+dateStr+':',e.message);})
+      .finally(function(){
+        doneDays++;
+        if(doneDays>=pending){
+          if(!foundAny){
+            document.getElementById('tp-status').textContent='⚠️ Storico Veneto in costruzione — dati disponibili dal 5 mag 2026';
+            loadOpenMeteoRegion(REGIONS.veneto.stations,pastDate,nowDate,labelPeriodo,cb);
+            return;
+          }
+          var output=Object.keys(rainTot).map(function(id){
+            var s=stMeta[id];
+            return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
+                    mm:rainTot[id]<0.5?0:Math.round(rainTot[id]*10)/10};
+          });
+          cb(output);
+        }
       });
-    })
-    .catch(function(e){
-      console.warn('[ARPAV] info fallito, uso Open-Meteo:',e.message);
-      loadOpenMeteoRegion(REGIONS.veneto.stations,pastDate,nowDate,labelPeriodo,cb);
-    });
+  });
 }
 // ═══════════════════════════════════════════════════════════════
 var GEOJSON_URL='https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson';
