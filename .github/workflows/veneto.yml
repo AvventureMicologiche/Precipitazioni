@@ -1,8 +1,16 @@
 name: Veneto
 on:
   workflow_dispatch:
+    inputs:
+      date_override:
+        description: 'Data da raccogliere (YYYY-MM-DD, lascia vuoto per oggi)'
+        required: false
+        default: ''
   schedule:
     - cron: '0 23 * * *'
+    - cron: '30 23 * * *'
+    - cron: '0 0 * * *'
+
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -11,8 +19,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: node .github/scripts/collect-veneto.js
-      - run: |
+      - name: Raccoglie dati Veneto
+        run: node .github/scripts/collect-veneto.js
+        env:
+          DATE_OVERRIDE: ${{ inputs.date_override }}
+      - name: Commit e push
+        run: |
           git config user.name "bot"
           git config user.email "bot@bot.com"
           git add data/veneto/
