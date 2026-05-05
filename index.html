@@ -1513,10 +1513,13 @@ function loadData(pastDate,nowDate,labelPeriodo){
           return {n:s.n||s.nomestazione,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'—'};
         });
       } else if(regionKey==='piemonte'){
-        var pieSt=(ARPA_PIE_STATIONS||REGIONS.piemonte.stations).map(function(s){
+        var pieRaw=ARPA_PIE_STATIONS||REGIONS.piemonte.stations;
+        var pieSt=pieRaw.map(function(s){
           return {n:s.n||s.name,lat:s.lat,lon:s.lon,q:s.q||s.altitude||0,p:s.p||s.province||'—'};
         });
-        stations=selectUniform(pieSt,150);
+        // Se ARPA_PIE_STATIONS è caricato (374 stazioni) usa selectUniform
+        // altrimenti usa tutto il fallback hardcoded
+        stations=ARPA_PIE_STATIONS?selectUniform(pieSt,200):pieSt;
       } else {
         stations=cfg.stations||[];
       }
