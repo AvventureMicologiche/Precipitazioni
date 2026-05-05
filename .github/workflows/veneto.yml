@@ -17,5 +17,5 @@ jobs:
           git config user.email "bot@bot.com"
           git add data/veneto/
           git diff --staged --quiet || git commit -m "veneto $(date -u +%Y-%m-%d)"
+          git pull --rebase origin main
           git push
-
