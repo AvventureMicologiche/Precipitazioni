@@ -64,9 +64,12 @@ exports.handler = async function(event) {
       const dateFrom = params.date_from || '';
       const dateTo   = params.date_to   || '';
       const page     = params.page      || '1';
-      const url = `${API_BASE}/data_pie?date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}&page=${page}&page_size=10000`;
+      // I parametri arrivano già decodificati da Netlify — li passiamo direttamente
+      const url = `${API_BASE}/data_pie?date_from=${dateFrom}&date_to=${dateTo}&page=${page}&page_size=10000`;
+      console.log('[PIE proxy] url:', url);
       const res  = await fetch(url, { headers:{Accept:'application/json'} });
       const data = await res.text();
+      console.log('[PIE proxy] status:', res.status, 'body length:', data.length);
       return {
         statusCode: res.status,
         headers: { ...cors(), 'Content-Type':'application/json', 'Cache-Control':'public, s-maxage=300' },
