@@ -1731,10 +1731,34 @@ function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
     });
   }
 
-  // ── Realtime: ultimi 6 giorni via API Netlify proxy ───────────
+  // ── Realtime: usa i campi cum_rain_Xh giusti per periodo ────
   if(msRange<=SIX_DAYS){
-    var dateFrom=fmtDate(pastDate)+'T00:00';
-    var dateTo=fmtDate(nowDate)+'T23:59';
+    var ONE_HOUR=3600000;
+    // Determina quale campo usare in base al periodo
+    var rainField;
+    var dateFrom, dateTo;
+    function fmtISO(d){
+      var p=function(n){return String(n).padStart(2,'0');};
+      return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())
+        +'T'+p(d.getHours())+':'+p(d.getMinutes());
+    }
+
+    if(msRange<=1*ONE_HOUR){
+      rainField='cum_rain_1h';
+    } else if(msRange<=3*ONE_HOUR){
+      rainField='cum_rain_3h';
+    } else if(msRange<=6*ONE_HOUR){
+      rainField='cum_rain_6h';
+    } else if(msRange<=12*ONE_HOUR){
+      rainField='cum_rain_12h';
+    } else {
+      rainField='cum_rain_24h';
+    }
+
+    // Per periodi orari prendo l'ultima misura disponibile del giorno
+    dateFrom=fmtDate(pastDate)+'T00:00';
+    dateTo=fmtDate(nowDate)+'T23:59';
+
     var url=API_BASE+'?type=data_pie'
       +'&date_from='+encodeURIComponent(dateFrom)
       +'&date_to='+encodeURIComponent(dateTo);
@@ -1748,25 +1772,28 @@ function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
         return fetch(url).then(function(r){if(!r.ok)throw new Error('data HTTP '+r.status);return r.json();})
           .then(function(raw){
             var misure=Array.isArray(raw)?raw:(raw.data||raw.results||[]);
-            var rainMap={};
+            // Prendi l'ultimo record per stazione (più recente)
+            var lastRecord={};
             misure.forEach(function(m){
               var id=m.station_code;if(!id)return;
-              var v=parseFloat(m.cum_rain_24h);
-              if(isNaN(v)||v<0)return;
-              if(rainMap[id]===undefined||v>rainMap[id])rainMap[id]=v;
+              if(!lastRecord[id]||m.date>lastRecord[id].date) lastRecord[id]=m;
             });
             var output=[];
-            Object.keys(rainMap).forEach(function(id){
+            Object.keys(lastRecord).forEach(function(id){
+              var m=lastRecord[id];
               var s=stIndex[id];if(!s)return;
               var lat=parseFloat(s.lat),lon=parseFloat(s.lng||s.lon);
               if(isNaN(lat)||isNaN(lon))return;
               if(lat<43.8||lat>46.5||lon<6.6||lon>9.3)return;
-              var mm=rainMap[id];if(mm>300)mm=0;
+              var v=parseFloat(m[rainField]);
+              if(isNaN(v)||v<0) v=0;
+              if(v>300) v=0;
               output.push({n:s.name||id,lat:Math.round(lat*10000)/10000,
                 lon:Math.round(lon*10000)/10000,q:parseInt(s.altitude||0)||0,
-                p:s.province||'—',mm:Math.round(mm*10)/10});
+                p:s.province||'—',mm:Math.round(v*10)/10});
             });
-            cb(output);
+            console.log('[PIE realtime] stazioni:',output.length,'campo:',rainField);
+            cb(output.length>=3?output:[]);
           });
       })
       .catch(function(e){
