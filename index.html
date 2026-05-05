@@ -1554,13 +1554,9 @@ function loadData(pastDate,nowDate,labelPeriodo){
           return {n:s.n||s.nomestazione,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'—'};
         });
       } else if(regionKey==='piemonte'){
-        var pieRaw=ARPA_PIE_STATIONS||REGIONS.piemonte.stations;
-        var pieSt=pieRaw.map(function(s){
-          return {n:s.n||s.name,lat:s.lat,lon:s.lon,q:s.q||s.altitude||0,p:s.p||s.province||'—'};
-        });
-        // Se ARPA_PIE_STATIONS è caricato (374 stazioni) usa selectUniform
-        // altrimenti usa tutto il fallback hardcoded
-        stations=ARPA_PIE_STATIONS?selectUniform(pieSt,200):pieSt;
+        // Per Open-Meteo usa sempre le stazioni hardcoded ottimizzate
+        // (distribuzione uniforme su tutto il territorio)
+        stations=REGIONS.piemonte.stations;
       } else {
         stations=cfg.stations||[];
       }
