@@ -1513,9 +1513,10 @@ function loadData(pastDate,nowDate,labelPeriodo){
           return {n:s.n||s.nomestazione,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'—'};
         });
       } else if(regionKey==='piemonte'){
-        stations=(ARPA_PIE_STATIONS||REGIONS.piemonte.stations).map(function(s){
+        var pieSt=(ARPA_PIE_STATIONS||REGIONS.piemonte.stations).map(function(s){
           return {n:s.n||s.name,lat:s.lat,lon:s.lon,q:s.q||s.altitude||0,p:s.p||s.province||'—'};
         });
+        stations=selectUniform(pieSt,150);
       } else {
         stations=cfg.stations||[];
       }
