@@ -13,8 +13,8 @@ const https = require('https');
 
 // ── Configurazione ─────────────────────────────────────────────
 const DAYS_BACK = 365;
-const BATCH_SIZE = 50; // stazioni per chiamata Open-Meteo
-const DELAY_MS = 3000;  // delay tra chiamate per non fare rate limit
+const BATCH_SIZE = 50;
+const DELAY_MS = 5000;  // 5 secondi tra chiamate
 
 const REGIONS = {
   piemonte: {
@@ -138,7 +138,7 @@ function fmtDate(d) {
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
 }
 
-function fetchURL(url, retries=3) {
+function fetchURL(url, retries=5) {
   return new Promise((resolve, reject) => {
     const attempt = (n) => {
       https.get(url, { headers: { 'Accept': 'application/json' } }, res => {
@@ -147,8 +147,9 @@ function fetchURL(url, retries=3) {
         res.on('end', () => {
           if (res.statusCode === 429) {
             if (n > 0) {
-              console.warn('\n  429 Too Many Requests — aspetto 10 secondi...');
-              setTimeout(() => attempt(n-1), 10000);
+              const wait = (6-n)*15000; // 15s, 30s, 45s, 60s, 75s
+              console.warn(`\n  429 — aspetto ${wait/1000}s (tentativo ${6-n}/5)...`);
+              setTimeout(() => attempt(n-1), wait);
             } else reject(new Error('429 dopo tutti i retry'));
           } else if (res.statusCode !== 200) {
             reject(new Error(`HTTP ${res.statusCode}`));
