@@ -14,7 +14,7 @@ const https = require('https');
 // ── Configurazione ─────────────────────────────────────────────
 const DAYS_BACK = 365;
 const BATCH_SIZE = 50; // stazioni per chiamata Open-Meteo
-const DELAY_MS = 500;  // delay tra chiamate per non fare rate limit
+const DELAY_MS = 3000;  // delay tra chiamate per non fare rate limit
 
 const REGIONS = {
   piemonte: {
@@ -138,16 +138,27 @@ function fmtDate(d) {
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
 }
 
-function fetchURL(url) {
+function fetchURL(url, retries=3) {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'Accept': 'application/json' } }, res => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => {
-        if (res.statusCode !== 200) reject(new Error(`HTTP ${res.statusCode}`));
-        else resolve(data);
-      });
-    }).on('error', reject);
+    const attempt = (n) => {
+      https.get(url, { headers: { 'Accept': 'application/json' } }, res => {
+        let data = '';
+        res.on('data', c => data += c);
+        res.on('end', () => {
+          if (res.statusCode === 429) {
+            if (n > 0) {
+              console.warn('\n  429 Too Many Requests — aspetto 10 secondi...');
+              setTimeout(() => attempt(n-1), 10000);
+            } else reject(new Error('429 dopo tutti i retry'));
+          } else if (res.statusCode !== 200) {
+            reject(new Error(`HTTP ${res.statusCode}`));
+          } else {
+            resolve(data);
+          }
+        });
+      }).on('error', reject);
+    };
+    attempt(retries);
   });
 }
 
