@@ -2197,7 +2197,6 @@ document.getElementById('btn-funghi').addEventListener('click',function(){
   var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='';
   document.getElementById('datehdr').textContent=fmt(past25)+' – '+fmt(past18);
   console.log('[FUNGHI] chiamo loadData...');
-  setLoading(true);
   loadData(past25,past18,label);
   console.log('[FUNGHI] loadData chiamato');
 });
