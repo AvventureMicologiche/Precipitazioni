@@ -2163,6 +2163,7 @@ function fitMapToRegions(regionKeys){
 document.getElementById('btn-funghi').addEventListener('click',function(){
   if(isLoading) return;
   var active=getActiveRegions();
+  console.log('[FUNGHI] regioni attive:', active);
   if(active.length===0){
     var el=document.getElementById('tp-status');el.textContent='⚠️ Seleziona prima una regione!';el.className='error';
     return;
