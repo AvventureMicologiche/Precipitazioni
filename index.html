@@ -1698,27 +1698,48 @@ function loadARPALombardiaRegion(pastDate,nowDate,labelPeriodo,cb){
       return dayMap;
     });
   }
+  var todayStr=new Date().toISOString().substring(0,10);
+  // Escludi oggi dai giorni ARPA — verrà aggiunto da Open-Meteo
+  days=days.filter(function(d){
+    return d.toISOString().substring(0,10)!==todayStr;
+  });
   var rainMap={};var WINDOW=10;
   function loadWindow(idx){
     if(idx>=days.length){
-      // Usa stazioni hardcoded per distribuzione uniforme
-      // Assegna mm dalla stazione ARPA più vicina
       var arpaList=Object.keys(stMap).map(function(id){
         var st=stMap[id];
         return {lat:st.lat,lon:st.lon,mm:rainMap[id]||0};
       });
-      var gridSt=ARPA_STATIONS||LOMBARDIA_STATIONS;
-      var out=gridSt.map(function(s){
-        var bestMm=0,bestDist=999;
-        arpaList.forEach(function(a){
-          var d=Math.abs(a.lat-s.lat)+Math.abs(a.lon-s.lon);
-          if(d<bestDist){bestDist=d;bestMm=a.mm;}
+
+      function buildOutput(omDati){
+        var omMap={};
+        if(omDati) omDati.forEach(function(s){omMap[s.n]=s.mm||0;});
+        var out=LOMBARDIA_STATIONS.map(function(s){
+          var bestMm=0,bestDist=999;
+          arpaList.forEach(function(a){
+            var d=Math.abs(a.lat-s.lat)+Math.abs(a.lon-s.lon);
+            if(d<bestDist){bestDist=d;bestMm=a.mm;}
+          });
+          var todayMM=omMap[s.n||s.nomestazione]||0;
+          var total=bestMm+todayMM;
+          return {n:s.n||s.nomestazione,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'—',
+                  mm:total<0.5?0:Math.round(total*10)/10};
         });
-        return {n:s.n||s.nomestazione,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'—',
-                mm:bestMm<0.5?0:Math.round(bestMm*10)/10};
-      });
-      out=selectUniform(out,150);
-      cb(out.length>=3?out:[]);
+        cb(out.filter(function(s){return s.lat&&s.lon;}).length>=3?
+           out.filter(function(s){return s.lat&&s.lon;}):[]); 
+      }
+
+      // Aggiunge oggi da Open-Meteo
+      var lastDay=nowDate.toISOString?nowDate.toISOString().substring(0,10):todayStr;
+      if(lastDay===todayStr){
+        var todayStart=new Date(); todayStart.setHours(0,0,0,0);
+        var todayEnd=new Date(); todayEnd.setHours(23,59,59,999);
+        loadOpenMeteoRegion(LOMBARDIA_STATIONS,todayStart,todayEnd,'oggi',function(omDati){
+          buildOutput(omDati);
+        });
+      } else {
+        buildOutput(null);
+      }
       return;
     }
     var win=days.slice(idx,idx+WINDOW);
