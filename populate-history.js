@@ -14,7 +14,7 @@ const https = require('https');
 // ── Configurazione ─────────────────────────────────────────────
 const DAYS_BACK = 365;
 const BATCH_SIZE = 50;
-const DELAY_MS = 5000;  // 5 secondi tra chiamate
+const DELAY_MS = 30000;  // 30 secondi tra chiamate
 
 const REGIONS = {
   piemonte: {
