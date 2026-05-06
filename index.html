@@ -2162,7 +2162,8 @@ function fitMapToRegions(regionKeys){
 // Bottone funghi — piogge 18-25 giorni fa
 document.getElementById('btn-funghi').addEventListener('click',function(){
   console.log('[FUNGHI] click, isLoading:', isLoading);
-  if(isLoading) return;
+  isLoading=false; // reset forzato per evitare blocco
+  if(false) return;
   var active=getActiveRegions();
   console.log('[FUNGHI] regioni attive:', active);
   if(active.length===0){
