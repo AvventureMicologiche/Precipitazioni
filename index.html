@@ -1538,6 +1538,16 @@ function loadData(pastDate,nowDate,labelPeriodo){
     renderMulti(allData,labelPeriodo,allFonti);
   }
 
+  // Timeout sicurezza — se dopo 30 secondi non finisce, forza completamento
+  var safetyTimer=setTimeout(function(){
+    if(loadSessionId===mySession && isLoading){
+      console.warn('[loadData] timeout sicurezza — forzato completamento');
+      setLoading(false);
+      var _ts=document.getElementById('tp-status');_ts.className='error';
+      _ts.textContent='⚠️ Caricamento timeout — riprova';
+    }
+  }, 30000);
+
   regions.forEach(function(regionKey){
     var cfg=REGIONS[regionKey]||REGIONS.lombardia;
     var source=cfg.dataSource||'open_meteo';
@@ -1881,7 +1891,7 @@ function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
         if(doneDays>=pending){
           if(!foundAny){
             var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='⚠️ Storico Piemonte in costruzione — dati disponibili dal 3 mag 2026';
-            loadOpenMeteoRegion(REGIONS.piemonte.stations,pastDate,nowDate,labelPeriodo,cb);
+            cb([]);
             return;
           }
           // Usa stazioni hardcoded per distribuzione uniforme
@@ -1988,7 +1998,7 @@ function loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,cb){
         if(doneDays>=pending){
           if(!foundAny){
             var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='⚠️ Storico Veneto in costruzione — dati disponibili dal 5 mag 2026';
-            loadOpenMeteoRegion(REGIONS.veneto.stations,pastDate,nowDate,labelPeriodo,cb);
+            cb([]);
             return;
           }
           // Aggiunge oggi da Open-Meteo se file mancante
