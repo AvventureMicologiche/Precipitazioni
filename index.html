@@ -1701,11 +1701,23 @@ function loadARPALombardiaRegion(pastDate,nowDate,labelPeriodo,cb){
   var rainMap={};var WINDOW=10;
   function loadWindow(idx){
     if(idx>=days.length){
-      var allSt=Object.keys(stMap).map(function(id){
-        var st=stMap[id];var mm=rainMap[id]||0;
-        return {n:st.n,lat:st.lat,lon:st.lon,q:st.q,p:st.p,mm:mm<0.5?0:Math.round(mm*10)/10};
+      // Usa stazioni hardcoded per distribuzione uniforme
+      // Assegna mm dalla stazione ARPA più vicina
+      var arpaList=Object.keys(stMap).map(function(id){
+        var st=stMap[id];
+        return {lat:st.lat,lon:st.lon,mm:rainMap[id]||0};
       });
-      var out=selectUniform(allSt,200);
+      var gridSt=ARPA_STATIONS||LOMBARDIA_STATIONS;
+      var out=gridSt.map(function(s){
+        var bestMm=0,bestDist=999;
+        arpaList.forEach(function(a){
+          var d=Math.abs(a.lat-s.lat)+Math.abs(a.lon-s.lon);
+          if(d<bestDist){bestDist=d;bestMm=a.mm;}
+        });
+        return {n:s.n||s.nomestazione,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'—',
+                mm:bestMm<0.5?0:Math.round(bestMm*10)/10};
+      });
+      out=selectUniform(out,150);
       cb(out.length>=3?out:[]);
       return;
     }
