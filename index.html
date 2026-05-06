@@ -106,9 +106,13 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
 .tp-custom-btn:hover{background:#dde8ff}
 .tp-custom-btn.active{background:#1b3f6e;color:#fff}
 #tp-status{font-size:14px;color:#1b6e3f;font-weight:600;margin-top:8px;min-height:18px}
+#tp-status.error{color:#cc0000;}
 #tp-spinner{display:none;align-items:center;gap:8px;margin-top:8px;font-size:14px;font-weight:600;color:#1b3f6e}
 .mini-spin{width:16px;height:16px;border:2px solid #dde;border-top-color:#1b3f6e;
   border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+.tp-funghi-btn{background:#f4fdf0!important;border-color:#7bc67e!important;color:#2d6a30!important;}
+.tp-funghi-btn:hover{background:#e0f5e0!important;border-color:#4caf50!important;}
+.tp-funghi-btn.active{background:#2d6a30!important;border-color:#2d6a30!important;color:#fff!important;}
 #custom-box{display:none;margin-top:8px;padding-top:8px;border-top:1px solid #eee}
 .cd-lbl{font-size:9px;text-transform:uppercase;color:#aaa;letter-spacing:.05em;margin-bottom:2px}
 .cd-inp{width:100%;border:1px solid #d0d8e8;border-radius:5px;padding:4px 6px;
@@ -402,6 +406,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
           <div class="tp-btn" data-type="d" data-val="30">30d</div>
         </div>
         <div class="tp-custom-btn" id="btn-custom">📅 Date personalizzate</div>
+        <div class="tp-custom-btn tp-funghi-btn" id="btn-funghi"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAIAAADZrBkAAAAC6ElEQVR42m2TPWxTVxTHz7nvvveuE8cmtuNgG8cGQhEfgRCGBqlFqAtDVTGwsMOKOnTpUFUdq6pjhmYoDEhVVQnxIb6UABKIqoWUqFUpBNpA3IKdBD+C46R+ee/eczo8KwmoZ/7/7l/63XOQmWF1mADFbH3h9tWLT+7f9hsvVSJdHhh+7/BH5WIeAJgZEQEA2xgzM4MQ3337zdjol+xVilnVqdzQmGaLmnZ6z5ETxz/5TElkBkRsY0QGhPXVpycnTo30pqGwKbMhkQi1EYiWANbB1F/V+PDRL0a/dyxEFAIAyBghrLNnTt07PVLqs4VrubYTBAGRMUavBDpga8/AttbE2TMjXwthMRESEQIs+8HHh3cpr4IuIHNfPtuhlDHEAMRMRASo0DxasD4/92tvJiWYCBCfTD1qvZhmo5sN3Vg0U09r03/PeguLzUZDt5ZdpJgEW8WUX//j/l0AkJGZTDr1WqWTW7cWCuWQ8Xmt3lPMLQd+p2svvfa8ymMnaOa7VtAEK/6/bZOR1ouXLv0++WNPKr7YaFpS9m/eFIsnDxz8YKbyfHJiMpvqGj//w4M7N0fHfyuVSm2TETk3O1epzFy5fCGXsuOdnbv37i9v6Z9/OT8+dmvf0FB1bj6dLRw6+D4zy+ifEZGIejf29mSzP98ZSyZjwCKR3EDMUsrilv6BoeF3O2ICMSoQaxvCzMw3ro9pv2lZtm3bjqu01l3xuA5aHTElEIgocrGGCSEQcfrPh5lMdxiGtutKKQ2R6yrbwmqtBoARs4ZF1c2l5aVFL6aU1lq5ypISmBkgmYi/qtej2BtYNK88j40GRCnt0uZ+aL/Njuv4fmt98g2MmQGIiXbs2tuzMWe0jnyFgXZc9T9YtNO5fC4kK5cvvLNjZxiGiCillFJUZ+f7SqUo9nYbM7uO8+GRY0//8Wq1KiIAsN9qXbt2o1jenuruXtW47t7WiXk2M/PL3Z8AjC1lqGnb9p2Dg4OrBxrNfxMWeekz+THZAAAAAElFTkSuQmCC" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;">Piogge per funghi <span style="font-size:10px;opacity:.8">(range 18-25 gg fa)</span></div>
         <div id="custom-box">
           <div class="cd-lbl">Data inizio</div>
           <input type="date" class="cd-inp" id="cd-from">
@@ -1085,7 +1090,7 @@ function render(dati,fonte,labelPeriodo){
       var rings=regionRings[currentRegion]||[];
       gridPoints=buildGrid(dati,rings);
       drawGrid();
-      document.getElementById('tp-status').textContent='✅ '+labelPeriodo;
+      var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='✅ '+labelPeriodo;
     }
     setLoading(false);
   },20);
@@ -1505,7 +1510,7 @@ function loadData(pastDate,nowDate,labelPeriodo){
   clearMarkers();
   clearHeatmap();
   document.getElementById('legend-panel').style.display='none';
-  document.getElementById('tp-status').textContent='';
+  var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='';
   setLoading(true);
   hideTooltip();
 
@@ -1527,7 +1532,7 @@ function loadData(pastDate,nowDate,labelPeriodo){
     // Tutte le regioni caricate — render finale unificato
     if(allData.length<3){
       setLoading(false);
-      document.getElementById('tp-status').textContent='⚠️ Nessun dato disponibile';
+      var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='⚠️ Nessun dato disponibile';
       return;
     }
     renderMulti(allData,labelPeriodo,allFonti);
@@ -1636,7 +1641,7 @@ render=function(dati,fonte,labelPeriodo,ringsOverride){
       var rings=ringsOverride||(regionRings[activeR[0]]||[]);
       gridPoints=buildGrid(dati,rings);
       drawGrid();
-      document.getElementById('tp-status').textContent='✅ '+labelPeriodo;
+      var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='✅ '+labelPeriodo;
     }
     setLoading(false);
   },20);
@@ -1875,7 +1880,7 @@ function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
         doneDays++;
         if(doneDays>=pending){
           if(!foundAny){
-            document.getElementById('tp-status').textContent='⚠️ Storico Piemonte in costruzione — dati disponibili dal 3 mag 2026';
+            var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='⚠️ Storico Piemonte in costruzione — dati disponibili dal 3 mag 2026';
             loadOpenMeteoRegion(REGIONS.piemonte.stations,pastDate,nowDate,labelPeriodo,cb);
             return;
           }
@@ -1982,7 +1987,7 @@ function loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,cb){
         doneDays++;
         if(doneDays>=pending){
           if(!foundAny){
-            document.getElementById('tp-status').textContent='⚠️ Storico Veneto in costruzione — dati disponibili dal 5 mag 2026';
+            var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='⚠️ Storico Veneto in costruzione — dati disponibili dal 5 mag 2026';
             loadOpenMeteoRegion(REGIONS.veneto.stations,pastDate,nowDate,labelPeriodo,cb);
             return;
           }
@@ -2104,7 +2109,7 @@ function switchRegion(regionKey){
   clearMarkers();
   clearHeatmap();
   document.getElementById('legend-panel').style.display='none';
-  document.getElementById('tp-status').textContent='';
+  var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='';
   document.getElementById('badge').textContent='–';
   document.getElementById('datehdr').textContent='Seleziona un periodo';
   hideTooltip();
@@ -2154,7 +2159,28 @@ function fitMapToRegions(regionKeys){
   map.fitBounds([[latMin,lonMin],[latMax,lonMax]],{animate:true,duration:0.6,padding:[30,30]});
 }
 
-// Listener checkbox regioni — una sola regione alla volta
+// Bottone funghi — piogge 18-25 giorni fa
+document.getElementById('btn-funghi').addEventListener('click',function(){
+  if(isLoading) return;
+  var active=getActiveRegions();
+  if(active.length===0){
+    var el=document.getElementById('tp-status');el.textContent='⚠️ Seleziona prima una regione!';el.className='error';
+    return;
+  }
+  document.querySelectorAll('.tp-btn,.tp-custom-btn').forEach(function(b){b.classList.remove('active');});
+  this.classList.add('active');
+  document.getElementById('custom-box').style.display='none';
+  var now=new Date();
+  var past25=new Date(now.getTime()-25*24*3600000);
+  var past18=new Date(now.getTime()-18*24*3600000);
+  function fmt(d){var p=function(n){return String(n).padStart(2,'0');};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+  var label='🍄 Piogge 18-25 gg fa ('+fmt(past25)+' → '+fmt(past18)+')';
+  currentPast=past25; currentNow=past18; currentLabel=label;
+  var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='';
+  document.getElementById('datehdr').textContent=fmt(past25)+' – '+fmt(past18);
+  setLoading(true);
+  loadData(past25,past18,label);
+});
 document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(cb){
   cb.addEventListener('change',function(){
     if(!this.checked){
@@ -2176,7 +2202,7 @@ document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(
     document.getElementById('legend-panel').style.display='none';
     document.getElementById('badge').textContent='–';
     document.getElementById('datehdr').textContent='Seleziona il periodo';
-    document.getElementById('tp-status').textContent='';
+    var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='';
     var rk=this.value;
     setRegionBorder(rk,function(){
       clearMarkers();
@@ -2205,6 +2231,11 @@ function setActiveBtn(el){
 document.querySelectorAll('.tp-btn').forEach(function(btn){
   btn.addEventListener('click',function(){
     if(isLoading) return;
+    if(getActiveRegions().length===0){
+      var el=document.getElementById('tp-status');el.textContent='⚠️ Seleziona prima una regione!';el.className='error';
+      return;
+    }
+    var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='';
     setActiveBtn(this);
     document.getElementById('custom-box').style.display='none';
     document.getElementById('btn-custom').classList.remove('active');
@@ -2228,6 +2259,11 @@ document.querySelectorAll('.tp-btn').forEach(function(btn){
 });
 
 document.getElementById('btn-custom').addEventListener('click',function(){
+  if(getActiveRegions().length===0){
+    var el=document.getElementById('tp-status');el.textContent='⚠️ Seleziona prima una regione!';el.className='error';
+    return;
+  }
+  var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='';
   var box=document.getElementById('custom-box');
   var open=box.style.display==='block';
   box.style.display=open?'none':'block';
@@ -2248,6 +2284,10 @@ document.getElementById('btn-custom').addEventListener('click',function(){
 
 document.getElementById('cd-apply').addEventListener('click',function(){
   if(isLoading) return;
+  if(getActiveRegions().length===0){
+    var el=document.getElementById('tp-status');el.textContent='⚠️ Seleziona prima una regione!';el.className='error';
+    return;
+  }
   var from=document.getElementById('cd-from').value;
   var to=document.getElementById('cd-to').value;
   if(!from||!to){alert('Seleziona entrambe le date');return;}
