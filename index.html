@@ -2098,32 +2098,28 @@ function fitMapToRegions(regionKeys){
   map.fitBounds([[latMin,lonMin],[latMax,lonMax]],{animate:true,duration:0.6,padding:[30,30]});
 }
 
-// Listener checkbox regioni
+// Listener checkbox regioni — una sola regione alla volta
 document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(cb){
   cb.addEventListener('change',function(){
-    var active=getActiveRegions();
-    if(active.length===0){
-      clearMarkers();
-      clearHeatmap();
-      Object.keys(regionBorders).forEach(function(rk){map.removeLayer(regionBorders[rk]);delete regionBorders[rk];});
-      document.getElementById('legend-panel').style.display='none';
-      document.getElementById('badge').textContent='–';
-      document.getElementById('datehdr').textContent='Seleziona il periodo';
+    if(!this.checked){
+      // Se deseleziona l'unica attiva, non fare nulla
+      this.checked=true;
       return;
     }
+    // Deseleziona tutte le altre
+    document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(other){
+      if(other!==cb){
+        other.checked=false;
+        var rk=other.value;
+        if(regionBorders[rk]){map.removeLayer(regionBorders[rk]);delete regionBorders[rk];}
+      }
+    });
     var rk=this.value;
-    if(this.checked){
-      setRegionBorder(rk,function(){
-        clearMarkers();
-        getActiveRegions().forEach(function(r){addDefaultMarkersForRegion(r);});
-        fitMapToRegions(getActiveRegions());
-      });
-    } else {
-      if(regionBorders[rk]){map.removeLayer(regionBorders[rk]);delete regionBorders[rk];}
+    setRegionBorder(rk,function(){
       clearMarkers();
-      getActiveRegions().forEach(function(r){addDefaultMarkersForRegion(r);});
-      fitMapToRegions(getActiveRegions());
-    }
+      addDefaultMarkersForRegion(rk);
+      fitMapToRegions([rk]);
+    });
     if(currentPast&&currentNow){
       loadData(currentPast,currentNow,currentLabel);
     }
