@@ -855,7 +855,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 // STATO
 // ═══════════════════════════════════════════════════════════════
 var activeRegions   = ['lombardia','piemonte']; // regioni con checkbox spuntata
-var currentRegion  = 'lombardia'; // ultima regione attiva per tooltip
+var currentRegion  = 'lombardia';
+var lastUsedFonte  = '—'; // fonte effettiva usata nell'ultimo render
 var ARPA_STATIONS    = null; // stazioni ARPA Lombardia
 var ARPA_PIE_STATIONS = null; // stazioni ARPA Piemonte (caricate al boot)
 var lombardiaRings = [];
@@ -1006,13 +1007,14 @@ function posTooltip(mx,my){
   tooltip.style.left=tx+'px';tooltip.style.top=ty+'px';
 }
 function showTooltip(s,rank,mx,my){
-  var cfg=REGIONS[currentRegion]||REGIONS.lombardia;
+  // Determina la regione dalla provincia della stazione
+  var fonte=lastUsedFonte||'—';
   document.getElementById('tt-nome').textContent=s.n;
   document.getElementById('tt-mm').textContent=s.mm;
   document.getElementById('tt-prov').textContent=s.p;
   document.getElementById('tt-quota').textContent=s.q+' m slm';
   document.getElementById('tt-rank').textContent='#'+rank+' / '+totalStations;
-  document.getElementById('tt-fonte').textContent=cfg.fonte;
+  document.getElementById('tt-fonte').textContent=fonte;
   posTooltip(mx,my);
   tooltip.style.display='block';
 }
@@ -1599,6 +1601,7 @@ function renderMulti(allData, labelPeriodo, fontiArr){
     return REGIONS[rk]?REGIONS[rk].fonte:'—';
   }).filter(function(v,i,a){return a.indexOf(v)===i;}).join(' + ');
   document.getElementById('fonte-tag').textContent='Fonte: '+fonteStr;
+  lastUsedFonte=fonteStr;
   render(allData, fonteStr, labelPeriodo, allRings);
 }
 
@@ -1839,12 +1842,38 @@ function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
             loadOpenMeteoRegion(REGIONS.piemonte.stations,pastDate,nowDate,labelPeriodo,cb);
             return;
           }
-          var output=Object.keys(rainTot).map(function(id){
-            var s=stMeta[id];
-            return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
-                    mm:rainTot[id]<0.5?0:Math.round(rainTot[id]*10)/10};
-          });
-          cb(output);
+          // Controlla se oggi manca — aggiunge Open-Meteo per il giorno corrente
+          var todayStr=fmtDate(new Date());
+          var lastDay=days[days.length-1];
+          if(lastDay===todayStr && !rainTot[todayStr+'_checked']){
+            // Oggi non è nei file storici — aggiungi 24h da Open-Meteo
+            var todayStart=new Date(); todayStart.setHours(0,0,0,0);
+            var todayEnd=new Date(); todayEnd.setHours(23,59,59,999);
+            loadOpenMeteoRegion(REGIONS.piemonte.stations,todayStart,todayEnd,'oggi',function(omDati){
+              omDati.forEach(function(s){
+                if(s.mm>0){
+                  var id=s.n;
+                  // Cerca stazione corrispondente nello storico ARPA
+                  // Se non trovata, aggiungila direttamente
+                  if(!stMeta[id]) stMeta[id]={n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p};
+                  rainTot[id]=(rainTot[id]||0)+s.mm;
+                }
+              });
+              var output=Object.keys(rainTot).map(function(id){
+                var s=stMeta[id];if(!s)return null;
+                return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
+                        mm:rainTot[id]<0.5?0:Math.round(rainTot[id]*10)/10};
+              }).filter(Boolean);
+              cb(output);
+            });
+          } else {
+            var output=Object.keys(rainTot).map(function(id){
+              var s=stMeta[id];
+              return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
+                      mm:rainTot[id]<0.5?0:Math.round(rainTot[id]*10)/10};
+            });
+            cb(output);
+          }
         }
       });
   });
@@ -1913,12 +1942,35 @@ function loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,cb){
             loadOpenMeteoRegion(REGIONS.veneto.stations,pastDate,nowDate,labelPeriodo,cb);
             return;
           }
-          var output=Object.keys(rainTot).map(function(id){
-            var s=stMeta[id];
-            return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
-                    mm:rainTot[id]<0.5?0:Math.round(rainTot[id]*10)/10};
-          });
-          cb(output);
+          // Aggiunge oggi da Open-Meteo se file mancante
+          var todayStr=fmtDate(new Date());
+          var lastDay=days[days.length-1];
+          if(lastDay===todayStr && !rainTot[todayStr+'_checked']){
+            var todayStart=new Date(); todayStart.setHours(0,0,0,0);
+            var todayEnd=new Date(); todayEnd.setHours(23,59,59,999);
+            loadOpenMeteoRegion(REGIONS.veneto.stations,todayStart,todayEnd,'oggi',function(omDati){
+              omDati.forEach(function(s){
+                if(s.mm>0){
+                  var id=s.n;
+                  if(!stMeta[id]) stMeta[id]={n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p};
+                  rainTot[id]=(rainTot[id]||0)+s.mm;
+                }
+              });
+              var output=Object.keys(rainTot).map(function(id){
+                var s=stMeta[id];if(!s)return null;
+                return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
+                        mm:rainTot[id]<0.5?0:Math.round(rainTot[id]*10)/10};
+              }).filter(Boolean);
+              cb(output);
+            });
+          } else {
+            var output=Object.keys(rainTot).map(function(id){
+              var s=stMeta[id];
+              return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
+                      mm:rainTot[id]<0.5?0:Math.round(rainTot[id]*10)/10};
+            });
+            cb(output);
+          }
         }
       });
   });
