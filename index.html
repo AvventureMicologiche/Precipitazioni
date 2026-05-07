@@ -1532,7 +1532,7 @@ function loadData(pastDate,nowDate,labelPeriodo){
     // Tutte le regioni caricate — render finale unificato
     if(allData.length<3){
       setLoading(false);
-      var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='⚠️ Nessun dato disponibile';
+      var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='⚠️ Nessun dato disponibile per il periodo selezionato';
       return;
     }
     renderMulti(allData,labelPeriodo,allFonti);
@@ -1728,8 +1728,11 @@ function loadARPALombardiaRegion(pastDate,nowDate,labelPeriodo,cb){
 
       function buildOutput(omDati){
         var omMap={};
-        if(omDati) omDati.forEach(function(s){omMap[s.n]=s.mm||0;});
-        var out=LOMBARDIA_STATIONS.map(function(s){
+        if(omDati) omDati.forEach(function(s){omMap[s.n||s.nomestazione]=s.mm||0;});
+        // Usa ARPA_STATIONS (151 stazioni reali) se disponibile, altrimenti hardcoded
+        var gridSt = (ARPA_STATIONS && ARPA_STATIONS.length>10) ? 
+          selectUniform(ARPA_STATIONS,150) : LOMBARDIA_STATIONS;
+        var out=gridSt.map(function(s){
           var bestMm=0,bestDist=999;
           arpaList.forEach(function(a){
             var d=Math.abs(a.lat-s.lat)+Math.abs(a.lon-s.lon);
@@ -1749,7 +1752,8 @@ function loadARPALombardiaRegion(pastDate,nowDate,labelPeriodo,cb){
       if(lastDay===todayStr){
         var todayStart=new Date(); todayStart.setHours(0,0,0,0);
         var todayEnd=new Date(); todayEnd.setHours(23,59,59,999);
-        loadOpenMeteoRegion(LOMBARDIA_STATIONS,todayStart,todayEnd,'oggi',function(omDati){
+        var lombSt=(ARPA_STATIONS&&ARPA_STATIONS.length>10)?selectUniform(ARPA_STATIONS,150):LOMBARDIA_STATIONS;
+        loadOpenMeteoRegion(lombSt,todayStart,todayEnd,'oggi',function(omDati){
           buildOutput(omDati);
         });
       } else {
@@ -2171,34 +2175,25 @@ function fitMapToRegions(regionKeys){
 
 // Bottone funghi — piogge 18-25 giorni fa
 document.getElementById('btn-funghi').addEventListener('click',function(){
-  console.log('[FUNGHI] click, isLoading:', isLoading);
   isLoading=false; // reset forzato per evitare blocco
   if(false) return;
   var active=getActiveRegions();
-  console.log('[FUNGHI] regioni attive:', active);
   if(active.length===0){
     var el=document.getElementById('tp-status');el.textContent='⚠️ Seleziona prima una regione!';el.className='error';
     return;
   }
-  console.log('[FUNGHI] passo 1');
   document.querySelectorAll('.tp-btn,.tp-custom-btn').forEach(function(b){b.classList.remove('active');});
-  console.log('[FUNGHI] passo 2');
   this.classList.add('active');
   document.getElementById('custom-box').style.display='none';
   var now=new Date();
   var past25=new Date(now.getTime()-25*24*3600000);
   var past18=new Date(now.getTime()-18*24*3600000);
-  console.log('[FUNGHI] passo 3 - fmt...');
   function fmt(d){var p=function(n){return String(n).padStart(2,'0');};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
-  console.log('[FUNGHI] passo 4 - label...');
   var label='🍄 Piogge 18-25 gg fa ('+fmt(past25)+' → '+fmt(past18)+')';
-  console.log('[FUNGHI] label:', label);
   currentPast=past25; currentNow=past18; currentLabel=label;
   var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='';
   document.getElementById('datehdr').textContent=fmt(past25)+' – '+fmt(past18);
-  console.log('[FUNGHI] chiamo loadData...');
   loadData(past25,past18,label);
-  console.log('[FUNGHI] loadData chiamato');
 });
 document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(cb){
   cb.addEventListener('change',function(){
