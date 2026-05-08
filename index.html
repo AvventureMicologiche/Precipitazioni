@@ -114,6 +114,18 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
 .tp-funghi-btn:hover{background:#e0f5e0!important;border-color:#4caf50!important;}
 .tp-funghi-btn.active{background:#2d6a30!important;border-color:#2d6a30!important;color:#fff!important;}
 #custom-box{display:none;margin-top:8px;padding-top:8px;border-top:1px solid #eee}
+@media(max-width:600px){
+  #custom-box{
+    position:fixed;bottom:0;left:0;right:0;z-index:3000;
+    background:#fff;padding:16px;
+    border-top:2px solid #1b3f6e;
+    box-shadow:0 -4px 20px rgba(0,0,0,.3);
+    border-radius:14px 14px 0 0;
+  }
+  .cd-lbl{font-size:15px!important;}
+  .cd-inp{font-size:16px!important;padding:10px!important;}
+  .cd-go{font-size:16px!important;padding:12px!important;}
+}
 .cd-lbl{font-size:9px;text-transform:uppercase;color:#aaa;letter-spacing:.05em;margin-bottom:2px}
 .cd-inp{width:100%;border:1px solid #d0d8e8;border-radius:5px;padding:4px 6px;
   font-size:11px;color:#333;font-family:inherit;margin-bottom:5px}
@@ -2131,7 +2143,13 @@ function switchRegion(regionKey){
   // Centra mappa sulla nuova regione
   var cfg=REGIONS[regionKey];
   if(cfg){
-    map.setView(cfg.center, cfg.zoom, {animate:true});
+    if(window.innerWidth<=600){
+      if(regionKey==='lombardia') map.setView([45.5, 9.85], 8, {animate:true});
+      else if(regionKey==='piemonte') map.setView([44.9, 7.9], 8, {animate:true});
+      else if(regionKey==='veneto') map.setView([45.6, 11.8], 8, {animate:true});
+    } else {
+      map.setView(cfg.center, cfg.zoom, {animate:true});
+    }
   }
 
   // Aggiorna fonte tag
@@ -2148,7 +2166,7 @@ function switchRegion(regionKey){
 
 // ─── Centra mappa sulle regioni attive ───────────────────────
 var REGION_BOUNDS={
-  lombardia: [[44.68, 8.50],[46.64,11.36]],
+  lombardia: [[44.90, 8.90],[46.40,10.70]],
   piemonte:  [[43.80, 6.63],[46.46, 9.22]],
   veneto:    [[44.79,10.63],[46.68,13.10]]
 };
@@ -2157,7 +2175,15 @@ function fitMapToRegions(regionKeys){
   if(!regionKeys||regionKeys.length===0) return;
   if(regionKeys.length===1){
     var cfg=REGIONS[regionKeys[0]];
-    if(cfg) map.setView(cfg.center, cfg.zoom, {animate:true,duration:0.6});
+    if(cfg) {
+      if(window.innerWidth<=600){
+        if(regionKey==='lombardia') { map.setView([45.5, 9.85], 8, {animate:true,duration:0.6}); }
+        else if(regionKey==='piemonte') { map.setView([44.9, 7.9], 8, {animate:true,duration:0.6}); }
+        else if(regionKey==='veneto') { map.setView([45.6, 11.8], 8, {animate:true,duration:0.6}); }
+      } else {
+        map.setView(cfg.center, cfg.zoom, {animate:true,duration:0.6});
+      }
+    }
     return;
   }
   // Più regioni: calcola bbox unificata
@@ -2170,7 +2196,10 @@ function fitMapToRegions(regionKeys){
     if(b[0][1]<lonMin) lonMin=b[0][1];
     if(b[1][1]>lonMax) lonMax=b[1][1];
   });
-  map.fitBounds([[latMin,lonMin],[latMax,lonMax]],{animate:true,duration:0.6,padding:[30,30]});
+  var pad=window.innerWidth<=600?[20,10]:[30,30];
+  var opts={animate:true,duration:0.6,padding:pad};
+  if(window.innerWidth<=600) opts.maxZoom=7;
+  map.fitBounds([[latMin,lonMin],[latMax,lonMax]],opts);
 }
 
 // Bottone funghi — piogge 18-25 giorni fa
