@@ -2205,7 +2205,6 @@ function fitMapToRegions(regionKeys){
   });
   var pad=window.innerWidth<=600?[20,10]:[30,30];
   var opts={animate:true,duration:0.6,padding:pad};
-  if(window.innerWidth<=600) opts.maxZoom=7;
   map.fitBounds([[latMin,lonMin],[latMax,lonMax]],opts);
 }
 
@@ -2257,7 +2256,7 @@ document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(
     setRegionBorder(rk,function(){
       clearMarkers();
       addDefaultMarkersForRegion(rk);
-      fitMapToRegions([rk]);
+      if(window.innerWidth>600) fitMapToRegions([rk]);
     });
     if(currentPast&&currentNow){
       loadData(currentPast,currentNow,currentLabel);
