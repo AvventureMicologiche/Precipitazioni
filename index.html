@@ -116,11 +116,18 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
 #custom-box{display:none;margin-top:8px;padding-top:8px;border-top:1px solid #eee}
 @media(max-width:600px){
   #custom-box{
-    position:fixed;bottom:0;left:0;right:0;z-index:3000;
-    background:#fff;padding:16px;
+    position:fixed !important;
+    bottom:0 !important;
+    left:0 !important;
+    right:0 !important;
+    top:auto !important;
+    z-index:9999 !important;
+    background:#fff;
+    padding:16px;
     border-top:2px solid #1b3f6e;
     box-shadow:0 -4px 20px rgba(0,0,0,.3);
     border-radius:14px 14px 0 0;
+    transform:none !important;
   }
   .cd-lbl{font-size:15px!important;}
   .cd-inp{font-size:16px!important;padding:10px!important;}
