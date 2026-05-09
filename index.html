@@ -2253,6 +2253,12 @@ document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(
     document.getElementById('datehdr').textContent='Seleziona il periodo';
     var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='';
     var rk=this.value;
+    // Centra mappa su mobile
+    if(window.innerWidth<=600){
+      if(rk==='lombardia') map.setView([45.3, 9.85], 7.5);
+      else if(rk==='piemonte') map.setView([44.8, 7.9], 7.5);
+      else if(rk==='veneto') map.setView([45.5, 11.8], 7.5);
+    }
     setRegionBorder(rk,function(){
       clearMarkers();
       addDefaultMarkersForRegion(rk);
