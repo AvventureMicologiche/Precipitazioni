@@ -286,7 +286,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
   .tp-content{padding-top:10px;}
   #time-panel.open{transform:translateY(0);}
 
-  /* Legenda: overlay slide-up sopra il contenuto del time-panel */
+  /* Legenda: overlay slide-up — copre completamente il time-panel */
   #legend-panel{
     position:fixed !important;
     left:0 !important; right:0 !important;
@@ -294,28 +294,29 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
     width:100% !important;
     border-radius:14px 14px 0 0 !important;
     box-shadow:0 -4px 20px rgba(0,0,0,.25) !important;
-    padding:10px 14px 16px !important;
+    padding:16px 16px 20px !important;
     z-index:2100 !important;
     border-top:2px solid #1b3f6e !important;
     transform:translateY(100%);
     transition:transform .3s cubic-bezier(.34,1.1,.64,1);
-    background:rgba(255,255,255,.98) !important;
-    max-height:40vh;
-    overflow-y:auto;
+    background:#fff !important;
+    height:40vh !important;
+    box-sizing:border-box;
   }
   #legend-panel.leg-visible{
     transform:translateY(0) !important;
   }
   #leg-back-btn{
     display:inline-flex !important;
-    align-items:center;gap:5px;
-    padding:7px 18px;
-    border-radius:20px;
-    border:1.5px solid #d0d8e8;
+    align-items:center;gap:6px;
+    padding:10px 22px;
+    border-radius:24px;
+    border:2px solid #1b3f6e;
     background:#f0f4fb;
     color:#1b3f6e;
-    font-family:inherit;font-size:15px;font-weight:700;
+    font-family:inherit;font-size:17px;font-weight:700;
     cursor:pointer;
+    white-space:nowrap;
   }
 
   /* Pulsanti compatti */
@@ -323,11 +324,12 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
   .tp-grid5,.tp-grid4{gap:5px;margin-bottom:5px;}
   .tp-custom-btn{padding:7px;font-size:12px;margin-top:4px;}
 
-  /* Stats */
-  .sv{font-size:19px;}.sl{font-size:9px;}
-  .grad{height:13px;}.grad-l{font-size:10px;}
-  .leg-title{font-size:11px;}
-  .stats-row{gap:5px;}
+  /* Stats legenda più grandi */
+  .sv{font-size:26px;}.sl{font-size:12px;}
+  .grad{height:20px;}.grad-l{font-size:12px;margin-bottom:12px;}
+  .leg-title{font-size:15px;font-weight:700;}
+  .stats-row{gap:8px;margin-top:14px;}
+  .stat{padding:10px 6px;}
 
   /* Tooltip in alto */
   #st-tooltip{
