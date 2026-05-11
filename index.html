@@ -286,7 +286,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
   .tp-content{padding-top:10px;}
   #time-panel.open{transform:translateY(0);}
 
-  /* Legenda: overlay slide-up sopra il contenuto del time-panel */
+  /* Legenda: overlay slide-up — copre completamente il time-panel */
   #legend-panel{
     position:fixed !important;
     left:0 !important; right:0 !important;
@@ -294,14 +294,14 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
     width:100% !important;
     border-radius:14px 14px 0 0 !important;
     box-shadow:0 -4px 20px rgba(0,0,0,.25) !important;
-    padding:12px 14px 16px !important;
+    padding:16px 16px 20px !important;
     z-index:2100 !important;
     border-top:2px solid #1b3f6e !important;
     transform:translateY(100%);
     transition:transform .3s cubic-bezier(.34,1.1,.64,1);
     background:#fff !important;
-    max-height:40vh;
-    overflow-y:auto;
+    height:40vh !important;
+    box-sizing:border-box;
   }
   #legend-panel.leg-visible{
     transform:translateY(0) !important;
@@ -309,9 +309,9 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
   #leg-back-btn{
     display:inline-flex !important;
     align-items:center;gap:6px;
-    padding:7px 18px;
-    border-radius:20px;
-    border:1.5px solid #d0d8e8;
+    padding:10px 22px;
+    border-radius:24px;
+    border:2px solid #1b3f6e;
     background:#f0f4fb;
     color:#1b3f6e;
     font-family:inherit;font-size:17px;font-weight:700;
@@ -1173,8 +1173,6 @@ function positionLegend(){
 function showLegendMobile(){
   if(window.innerWidth>600) return;
   var leg=document.getElementById('legend-panel');
-  var tpc=document.querySelector('#time-panel .tp-content');
-  if(tpc) tpc.style.visibility='hidden';
   leg.style.display='block';
   leg.offsetHeight; // forza reflow per animazione
   leg.classList.add('leg-visible');
@@ -1184,8 +1182,6 @@ function hideLegendMobile(){
   if(window.innerWidth>600) return;
   var leg=document.getElementById('legend-panel');
   leg.classList.remove('leg-visible');
-  var tpc=document.querySelector('#time-panel .tp-content');
-  if(tpc) tpc.style.visibility='visible';
 }
 
 window.hideLegendMobile=hideLegendMobile;
@@ -1966,23 +1962,34 @@ function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
             cb([]);
             return;
           }
-          // Usa direttamente le stazioni ARPA dai file storici
-          var arpaOutput=Object.keys(rainTot).map(function(id){
+          // Usa stazioni hardcoded per distribuzione uniforme
+          // Assegna a ciascuna il valore mm della stazione ARPA più vicina
+          var arpaList=Object.keys(rainTot).map(function(id){
             var s=stMeta[id];if(!s)return null;
-            var mm=rainTot[id]||0;
-            return {n:s.n,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'',
-                    mm:mm<0.5?0:Math.round(mm*10)/10};
+            return {lat:s.lat,lon:s.lon,mm:rainTot[id]||0};
           }).filter(Boolean);
 
-          // Selezione uniforme: max 120 stazioni ben distribuite
-          var gridOutput=selectUniform(arpaOutput,120);
+          function nearestMM(lat,lon){
+            var best=0,bestDist=999;
+            arpaList.forEach(function(a){
+              var d=Math.abs(a.lat-lat)+Math.abs(a.lon-lon);
+              if(d<bestDist){bestDist=d;best=a.mm;}
+            });
+            return best;
+          }
+
+          var gridOutput=REGIONS.piemonte.stations.map(function(s){
+            var mm=arpaList.length>0?nearestMM(s.lat,s.lon):0;
+            return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
+                    mm:mm<0.5?0:Math.round(mm*10)/10};
+          });
 
           var todayStr=fmtDate(new Date());
           var lastDay=days[days.length-1];
           if(lastDay===todayStr && !rainTot[todayStr+'_checked']){
             var todayStart=new Date(); todayStart.setHours(0,0,0,0);
             var todayEnd=new Date(); todayEnd.setHours(23,59,59,999);
-            loadOpenMeteoRegion(gridOutput,todayStart,todayEnd,'oggi',function(omDati){
+            loadOpenMeteoRegion(REGIONS.piemonte.stations,todayStart,todayEnd,'oggi',function(omDati){
               var omMap={};
               omDati.forEach(function(s){omMap[s.n]=s.mm||0;});
               gridOutput.forEach(function(s){
