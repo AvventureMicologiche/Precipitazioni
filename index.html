@@ -825,8 +825,13 @@ var LOMBARDIA_STATIONS=[
 function selectUniform(stazioni, maxTotal){
   if(stazioni.length<=maxTotal) return stazioni;
   
-  var LAT_MIN=44.0, LAT_MAX=46.7, LON_MIN=8.4, LON_MAX=11.5;
-  var GRID_W=10, GRID_H=8; // 80 celle
+  var lats=stazioni.map(function(s){return s.lat;});
+  var lons=stazioni.map(function(s){return s.lon;});
+  var LAT_MIN=Math.min.apply(null,lats)-0.1;
+  var LAT_MAX=Math.max.apply(null,lats)+0.1;
+  var LON_MIN=Math.min.apply(null,lons)-0.1;
+  var LON_MAX=Math.max.apply(null,lons)+0.1;
+  var GRID_W=10, GRID_H=8;
   var MAX_PER_CELL=Math.ceil(maxTotal/(GRID_W*GRID_H))+2;
   
   var grid={};
@@ -1968,7 +1973,7 @@ function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
             return {lat:s.lat,lon:s.lon,mm:rainTot[id]||0};
           }).filter(Boolean);
 
-          var gridOutput=Object.keys(rainTot).filter(function(id){
+          var arpaFull=Object.keys(rainTot).filter(function(id){
             return !String(id).startsWith('om_');
           }).map(function(id){
             var s=stMeta[id];if(!s)return null;
@@ -1976,6 +1981,8 @@ function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
             return {n:s.n,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'',
                     mm:mm<0.5?0:Math.round(mm*10)/10};
           }).filter(Boolean);
+
+          var gridOutput=selectUniform(arpaFull,150);
 
           var todayStr=fmtDate(new Date());
           var lastDay=days[days.length-1];
@@ -2063,7 +2070,7 @@ function loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,cb){
             return;
           }
           // Usa solo stazioni ARPA reali (ID numerico, non om_X)
-          var gridOutput=Object.keys(rainTot).filter(function(id){
+          var arpaFull=Object.keys(rainTot).filter(function(id){
             return !String(id).startsWith('om_');
           }).map(function(id){
             var s=stMeta[id];if(!s)return null;
@@ -2071,6 +2078,8 @@ function loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,cb){
             return {n:s.n,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'',
                     mm:mm<0.5?0:Math.round(mm*10)/10};
           }).filter(Boolean);
+
+          var gridOutput=selectUniform(arpaFull,150);
 
           var todayStr=fmtDate(new Date());
           var lastDay=days[days.length-1];
