@@ -2062,15 +2062,6 @@ function loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,cb){
             cb([]);
             return;
           }
-          // Aggiunge oggi da Open-Meteo se file mancante
-          var todayStr=fmtDate(new Date());
-          var lastDay=days[days.length-1];
-
-          var arpaList=Object.keys(rainTot).map(function(id){
-            var s=stMeta[id];if(!s)return null;
-            return {lat:s.lat,lon:s.lon,mm:rainTot[id]||0};
-          }).filter(Boolean);
-
           // Usa direttamente le stazioni ARPA dai file storici
           var arpaOutput=Object.keys(rainTot).map(function(id){
             var s=stMeta[id];if(!s)return null;
@@ -2079,8 +2070,12 @@ function loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,cb){
                     mm:mm<0.5?0:Math.round(mm*10)/10};
           }).filter(Boolean);
 
+          console.log('[VEN] stazioni ARPA totali:',arpaOutput.length);
+
           // Selezione uniforme: max 120 stazioni ben distribuite
           var gridOutput=selectUniform(arpaOutput,120);
+
+          console.log('[VEN] dopo selectUniform:',gridOutput.length);
 
           var todayStr=fmtDate(new Date());
           var lastDay=days[days.length-1];
