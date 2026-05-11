@@ -825,7 +825,7 @@ var LOMBARDIA_STATIONS=[
 function selectUniform(stazioni, maxTotal){
   if(stazioni.length<=maxTotal) return stazioni;
   
-  var LAT_MIN=44.0, LAT_MAX=46.7, LON_MIN=8.4, LON_MAX=11.5;
+  var LAT_MIN=44.0, LAT_MAX=46.7, LON_MIN=6.5, LON_MAX=11.5;
   var GRID_W=10, GRID_H=8; // 80 celle
   var MAX_PER_CELL=Math.ceil(maxTotal/(GRID_W*GRID_H))+2;
   
@@ -1966,34 +1966,23 @@ function loadARPAPiemonteRegion(pastDate,nowDate,labelPeriodo,cb){
             cb([]);
             return;
           }
-          // Usa stazioni hardcoded per distribuzione uniforme
-          // Assegna a ciascuna il valore mm della stazione ARPA più vicina
-          var arpaList=Object.keys(rainTot).map(function(id){
+          // Usa direttamente le stazioni ARPA dai file storici
+          var arpaOutput=Object.keys(rainTot).map(function(id){
             var s=stMeta[id];if(!s)return null;
-            return {lat:s.lat,lon:s.lon,mm:rainTot[id]||0};
+            var mm=rainTot[id]||0;
+            return {n:s.n,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'',
+                    mm:mm<0.5?0:Math.round(mm*10)/10};
           }).filter(Boolean);
 
-          function nearestMM(lat,lon){
-            var best=0,bestDist=999;
-            arpaList.forEach(function(a){
-              var d=Math.abs(a.lat-lat)+Math.abs(a.lon-lon);
-              if(d<bestDist){bestDist=d;best=a.mm;}
-            });
-            return best;
-          }
-
-          var gridOutput=REGIONS.piemonte.stations.map(function(s){
-            var mm=arpaList.length>0?nearestMM(s.lat,s.lon):0;
-            return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
-                    mm:mm<0.5?0:Math.round(mm*10)/10};
-          });
+          // Selezione uniforme: max 120 stazioni ben distribuite
+          var gridOutput=selectUniform(arpaOutput,120);
 
           var todayStr=fmtDate(new Date());
           var lastDay=days[days.length-1];
           if(lastDay===todayStr && !rainTot[todayStr+'_checked']){
             var todayStart=new Date(); todayStart.setHours(0,0,0,0);
             var todayEnd=new Date(); todayEnd.setHours(23,59,59,999);
-            loadOpenMeteoRegion(REGIONS.piemonte.stations,todayStart,todayEnd,'oggi',function(omDati){
+            loadOpenMeteoRegion(gridOutput,todayStart,todayEnd,'oggi',function(omDati){
               var omMap={};
               omDati.forEach(function(s){omMap[s.n]=s.mm||0;});
               gridOutput.forEach(function(s){
