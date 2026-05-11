@@ -1178,8 +1178,10 @@ function positionLegend(){
 function showLegendMobile(){
   if(window.innerWidth>600) return;
   var leg=document.getElementById('legend-panel');
+  var tpc=document.querySelector('#time-panel .tp-content');
+  if(tpc) tpc.style.visibility='hidden';
   leg.style.display='block';
-  leg.offsetHeight; // forza reflow per animazione
+  leg.offsetHeight;
   leg.classList.add('leg-visible');
 }
 
@@ -1187,6 +1189,8 @@ function hideLegendMobile(){
   if(window.innerWidth>600) return;
   var leg=document.getElementById('legend-panel');
   leg.classList.remove('leg-visible');
+  var tpc=document.querySelector('#time-panel .tp-content');
+  if(tpc) tpc.style.visibility='visible';
 }
 
 window.hideLegendMobile=hideLegendMobile;
