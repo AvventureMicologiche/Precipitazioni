@@ -2062,43 +2062,36 @@ function loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,cb){
             cb([]);
             return;
           }
-          // Stazioni ARPA reali dai file storici
-          var arpaOutput=Object.keys(rainTot).map(function(id){
+          // Aggiunge oggi da Open-Meteo se file mancante
+          var todayStr=fmtDate(new Date());
+          var lastDay=days[days.length-1];
+
+          var arpaList=Object.keys(rainTot).map(function(id){
             var s=stMeta[id];if(!s)return null;
-            var mm=rainTot[id]||0;
-            return {n:s.n,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'',
-                    mm:mm<0.5?0:Math.round(mm*10)/10};
+            return {lat:s.lat,lon:s.lon,mm:rainTot[id]||0};
           }).filter(Boolean);
 
-          // Se stazioni sufficienti usa selectUniform, altrimenti nearestMM su hardcoded
-          var gridOutput;
-          if(arpaOutput.length>=80){
-            gridOutput=selectUniform(arpaOutput,120);
-          } else {
-            var arpaList=arpaOutput.map(function(s){
-              return {lat:s.lat,lon:s.lon,mm:s.mm};
+          function nearestMM(lat,lon){
+            var best=0,bestDist=999;
+            arpaList.forEach(function(a){
+              var d=Math.abs(a.lat-lat)+Math.abs(a.lon-lon);
+              if(d<bestDist){bestDist=d;best=a.mm;}
             });
-            function nearestMM(lat,lon){
-              var best=0,bestDist=999;
-              arpaList.forEach(function(a){
-                var d=Math.abs(a.lat-lat)+Math.abs(a.lon-lon);
-                if(d<bestDist){bestDist=d;best=a.mm;}
-              });
-              return best;
-            }
-            gridOutput=REGIONS.veneto.stations.map(function(s){
-              var mm=arpaList.length>0?nearestMM(s.lat,s.lon):0;
-              return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
-                      mm:mm<0.5?0:Math.round(mm*10)/10};
-            });
+            return best;
           }
+
+          var gridOutput=REGIONS.veneto.stations.map(function(s){
+            var mm=arpaList.length>0?nearestMM(s.lat,s.lon):0;
+            return {n:s.n,lat:s.lat,lon:s.lon,q:s.q,p:s.p,
+                    mm:mm<0.5?0:Math.round(mm*10)/10};
+          });
 
           var todayStr=fmtDate(new Date());
           var lastDay=days[days.length-1];
           if(lastDay===todayStr && !rainTot[todayStr+'_checked']){
             var todayStart=new Date(); todayStart.setHours(0,0,0,0);
             var todayEnd=new Date(); todayEnd.setHours(23,59,59,999);
-            loadOpenMeteoRegion(gridOutput,todayStart,todayEnd,'oggi',function(omDati){
+            loadOpenMeteoRegion(REGIONS.veneto.stations,todayStart,todayEnd,'oggi',function(omDati){
               var omMap={};
               omDati.forEach(function(s){omMap[s.n]=s.mm||0;});
               gridOutput.forEach(function(s){
