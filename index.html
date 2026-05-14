@@ -75,8 +75,8 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
 .rcheck-name{
   display:block;width:100%;
   background:#f0f4fb;border:1px solid #d0d8e8;border-radius:5px;
-  color:#1b3f6e;font-size:13px;font-weight:600;
-  padding:7px 4px;text-align:center;
+  color:#1b3f6e;font-size:15px;font-weight:700;
+  padding:10px 4px;text-align:center;
   cursor:pointer;transition:background .15s,border-color .15s;
 }
 .rcheck-wrap input:checked ~ .rcheck-name{
@@ -294,7 +294,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
     width:100% !important;
     border-radius:14px 14px 0 0 !important;
     box-shadow:0 -4px 20px rgba(0,0,0,.25) !important;
-    padding:12px 14px 14px !important;
+    padding:14px 14px 16px !important;
     z-index:2100 !important;
     border-top:2px solid #1b3f6e !important;
     transform:translateY(100%);
@@ -319,10 +319,13 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
     white-space:nowrap;
   }
 
-  /* Pulsanti compatti */
-  .tp-btn{padding:8px 2px;font-size:13px;}
-  .tp-grid5,.tp-grid4{gap:5px;margin-bottom:5px;}
-  .tp-custom-btn{padding:7px;font-size:12px;margin-top:4px;}
+  /* Pulsanti più grandi su mobile */
+  .tp-btn{padding:11px 2px;font-size:15px;font-weight:700;}
+  .tp-grid5,.tp-grid4{gap:5px;margin-bottom:6px;}
+  .tp-custom-btn{padding:12px;font-size:15px;font-weight:700;margin-top:5px;}
+  .tp-funghi-btn{padding:14px 10px!important;font-size:15px!important;font-weight:700!important;line-height:1.3!important;}
+  /* Tab regioni più grandi */
+  .rcheck-label{font-size:15px!important;font-weight:700!important;padding:8px 16px!important;}
 
   /* Stats legenda più grandi */
   .sv{font-size:26px;}.sl{font-size:12px;}
@@ -449,7 +452,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
           <div class="tp-btn" data-type="d" data-val="30">30d</div>
         </div>
         <div class="tp-custom-btn" id="btn-custom">📅 Date personalizzate</div>
-        <div class="tp-custom-btn tp-funghi-btn" id="btn-funghi"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAIAAADZrBkAAAAC6ElEQVR42m2TPWxTVxTHz7nvvveuE8cmtuNgG8cGQhEfgRCGBqlFqAtDVTGwsMOKOnTpUFUdq6pjhmYoDEhVVQnxIb6UABKIqoWUqFUpBNpA3IKdBD+C46R+ee/eczo8KwmoZ/7/7l/63XOQmWF1mADFbH3h9tWLT+7f9hsvVSJdHhh+7/BH5WIeAJgZEQEA2xgzM4MQ3337zdjol+xVilnVqdzQmGaLmnZ6z5ETxz/5TElkBkRsY0QGhPXVpycnTo30pqGwKbMhkQi1EYiWANbB1F/V+PDRL0a/dyxEFAIAyBghrLNnTt07PVLqs4VrubYTBAGRMUavBDpga8/AttbE2TMjXwthMRESEQIs+8HHh3cpr4IuIHNfPtuhlDHEAMRMRASo0DxasD4/92tvJiWYCBCfTD1qvZhmo5sN3Vg0U09r03/PeguLzUZDt5ZdpJgEW8WUX//j/l0AkJGZTDr1WqWTW7cWCuWQ8Xmt3lPMLQd+p2svvfa8ymMnaOa7VtAEK/6/bZOR1ouXLv0++WNPKr7YaFpS9m/eFIsnDxz8YKbyfHJiMpvqGj//w4M7N0fHfyuVSm2TETk3O1epzFy5fCGXsuOdnbv37i9v6Z9/OT8+dmvf0FB1bj6dLRw6+D4zy+ifEZGIejf29mSzP98ZSyZjwCKR3EDMUsrilv6BoeF3O2ICMSoQaxvCzMw3ro9pv2lZtm3bjqu01l3xuA5aHTElEIgocrGGCSEQcfrPh5lMdxiGtutKKQ2R6yrbwmqtBoARs4ZF1c2l5aVFL6aU1lq5ypISmBkgmYi/qtej2BtYNK88j40GRCnt0uZ+aL/Njuv4fmt98g2MmQGIiXbs2tuzMWe0jnyFgXZc9T9YtNO5fC4kK5cvvLNjZxiGiCillFJUZ+f7SqUo9nYbM7uO8+GRY0//8Wq1KiIAsN9qXbt2o1jenuruXtW47t7WiXk2M/PL3Z8AjC1lqGnb9p2Dg4OrBxrNfxMWeekz+THZAAAAAElFTkSuQmCC" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;">Piogge per funghi <span style="font-size:10px;opacity:.8">(range 18-25 gg fa)</span></div>
+        <div class="tp-custom-btn tp-funghi-btn" id="btn-funghi"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAIAAADZrBkAAAAC6ElEQVR42m2TPWxTVxTHz7nvvveuE8cmtuNgG8cGQhEfgRCGBqlFqAtDVTGwsMOKOnTpUFUdq6pjhmYoDEhVVQnxIb6UABKIqoWUqFUpBNpA3IKdBD+C46R+ee/eczo8KwmoZ/7/7l/63XOQmWF1mADFbH3h9tWLT+7f9hsvVSJdHhh+7/BH5WIeAJgZEQEA2xgzM4MQ3337zdjol+xVilnVqdzQmGaLmnZ6z5ETxz/5TElkBkRsY0QGhPXVpycnTo30pqGwKbMhkQi1EYiWANbB1F/V+PDRL0a/dyxEFAIAyBghrLNnTt07PVLqs4VrubYTBAGRMUavBDpga8/AttbE2TMjXwthMRESEQIs+8HHh3cpr4IuIHNfPtuhlDHEAMRMRASo0DxasD4/92tvJiWYCBCfTD1qvZhmo5sN3Vg0U09r03/PeguLzUZDt5ZdpJgEW8WUX//j/l0AkJGZTDr1WqWTW7cWCuWQ8Xmt3lPMLQd+p2svvfa8ymMnaOa7VtAEK/6/bZOR1ouXLv0++WNPKr7YaFpS9m/eFIsnDxz8YKbyfHJiMpvqGj//w4M7N0fHfyuVSm2TETk3O1epzFy5fCGXsuOdnbv37i9v6Z9/OT8+dmvf0FB1bj6dLRw6+D4zy+ifEZGIejf29mSzP98ZSyZjwCKR3EDMUsrilv6BoeF3O2ICMSoQaxvCzMw3ro9pv2lZtm3bjqu01l3xuA5aHTElEIgocrGGCSEQcfrPh5lMdxiGtutKKQ2R6yrbwmqtBoARs4ZF1c2l5aVFL6aU1lq5ypISmBkgmYi/qtej2BtYNK88j40GRCnt0uZ+aL/Njuv4fmt98g2MmQGIiXbs2tuzMWe0jnyFgXZc9T9YtNO5fC4kK5cvvLNjZxiGiCillFJUZ+f7SqUo9nYbM7uO8+GRY0//8Wq1KiIAsN9qXbt2o1jenuruXtW47t7WiXk2M/PL3Z8AjC1lqGnb9p2Dg4OrBxrNfxMWeekz+THZAAAAAElFTkSuQmCC" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;">Piogge per funghi <span style="font-size:13px;opacity:.8">(range 18-25 gg fa)</span></div>
         <div id="custom-box">
           <div class="cd-lbl">Data inizio</div>
           <input type="date" class="cd-inp" id="cd-from">
@@ -1177,9 +1180,11 @@ function positionLegend(){
 
 function showLegendMobile(){
   if(window.innerWidth>600) return;
+  // Nascondi tutto il contenuto del time-panel incluso il titolo
+  var tp=document.getElementById('time-panel');
+  if(tp) tp.style.visibility='hidden';
   var leg=document.getElementById('legend-panel');
-  var tpc=document.querySelector('#time-panel .tp-content');
-  if(tpc) tpc.style.visibility='hidden';
+  leg.style.minHeight='';
   leg.style.display='block';
   leg.offsetHeight;
   leg.classList.add('leg-visible');
@@ -1189,8 +1194,8 @@ function hideLegendMobile(){
   if(window.innerWidth>600) return;
   var leg=document.getElementById('legend-panel');
   leg.classList.remove('leg-visible');
-  var tpc=document.querySelector('#time-panel .tp-content');
-  if(tpc) tpc.style.visibility='visible';
+  var tp=document.getElementById('time-panel');
+  if(tp) tp.style.visibility='visible';
 }
 
 window.hideLegendMobile=hideLegendMobile;
