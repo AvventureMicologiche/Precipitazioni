@@ -410,7 +410,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
         <div class="tp-title">🗺 Seleziona regioni</div>
       </div>
       <div class="tp-content">
-        <div class="tp-grid3">
+        <div class="tp-grid4">
           <label class="rcheck-wrap">
             <input type="checkbox" id="chk-lombardia" value="lombardia">
             <span class="rcheck-box"></span>
@@ -425,6 +425,11 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
             <input type="checkbox" id="chk-veneto" value="veneto">
             <span class="rcheck-box"></span>
             <span class="rcheck-name">Veneto</span>
+          </label>
+          <label class="rcheck-wrap">
+            <input type="checkbox" id="chk-liguria" value="liguria">
+            <span class="rcheck-box"></span>
+            <span class="rcheck-name">Liguria</span>
           </label>
         </div>
       </div>
@@ -670,10 +675,10 @@ var REGIONS = {
   liguria: {
     name: 'Liguria',
     center: [44.4, 8.7], zoom: 9,
-    fonte: 'Open-Meteo (ERA5 reanalysis)',
+    fonte: 'ARPA Liguria (OMIRL)',
     geojson: 'https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson',
     geojsonFilter: 'ligur',
-    dataSource: 'open_meteo',
+    dataSource: 'arpa_liguria',
     stations: [
       {n:"Genova",          lat:44.407,lon:8.934, q:19,  p:"GE"},
       {n:"Savona",          lat:44.307,lon:8.482, q:4,   p:"SV"},
@@ -1656,6 +1661,8 @@ function loadData(pastDate,nowDate,labelPeriodo){
         // Per Open-Meteo usa sempre le stazioni hardcoded ottimizzate
         // (distribuzione uniforme su tutto il territorio)
         stations=REGIONS.piemonte.stations;
+      } else if(regionKey==='liguria'){
+        stations=REGIONS.liguria.stations;
       } else {
         stations=cfg.stations||[];
       }
@@ -1672,6 +1679,10 @@ function loadData(pastDate,nowDate,labelPeriodo){
       });
     } else if(source==='arpa_veneto'){
       loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,function(dati){
+        onRegionDone(dati,'🟢 ARPA live');
+      });
+    } else if(source==='arpa_liguria'){
+      loadARPALiguriaRegion(pastDate,nowDate,labelPeriodo,function(dati){
         onRegionDone(dati,'🟢 ARPA live');
       });
     } else {
@@ -2125,6 +2136,76 @@ function loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,cb){
       });
   });
 }
+// ═══════════════════════════════════════════════════════════════
+// ─── ARPA Liguria (file storici da GitHub) ──────────────────────
+function loadARPALiguriaRegion(pastDate,nowDate,labelPeriodo,cb){
+  var GITHUB_RAW='https://raw.githubusercontent.com/AvventureMicologiche/Mappa-Precipitazioni-Nord/main/data/liguria';
+  var days=[];
+  var d=new Date(pastDate);
+  while(d<=nowDate){days.push(fmtDate(new Date(d)));d.setDate(d.getDate()+1);}
+
+  var rainTot={};
+  var stMeta={};
+  var pending=days.length;
+  if(pending===0){cb([]);return;}
+
+  days.forEach(function(day){
+    fetch(GITHUB_RAW+'/'+day+'.json')
+      .then(function(r){if(!r.ok)throw new Error('404');return r.json();})
+      .then(function(data){
+        if(data.stations){
+          data.stations.forEach(function(s){
+            var id=s.id||s.n;
+            if(!stMeta[id]) stMeta[id]={n:s.n,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||''};
+            rainTot[id]=(rainTot[id]||0)+(s.mm||0);
+          });
+        }
+      })
+      .catch(function(){})
+      .finally(function(){
+        pending--;
+        if(pending>0) return;
+
+          // Stazioni ARPA reali (ID non om_X), fallback su tutto se poche
+          var arpaOnly=Object.keys(rainTot).filter(function(id){
+            return !String(id).startsWith('om_');
+          }).map(function(id){
+            var s=stMeta[id];if(!s)return null;
+            var mm=rainTot[id]||0;
+            return {n:s.n,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'',
+                    mm:mm<0.5?0:Math.round(mm*10)/10};
+          }).filter(Boolean);
+
+          var arpaFull=arpaOnly.length>=10?arpaOnly:Object.keys(rainTot).map(function(id){
+            var s=stMeta[id];if(!s)return null;
+            var mm=rainTot[id]||0;
+            return {n:s.n,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'',
+                    mm:mm<0.5?0:Math.round(mm*10)/10};
+          }).filter(Boolean);
+
+          var gridOutput=selectUniform(arpaFull,120);
+
+          var todayStr=fmtDate(new Date());
+          var lastDay=days[days.length-1];
+          if(lastDay===todayStr){
+            var todayStart=new Date(); todayStart.setHours(0,0,0,0);
+            var todayEnd=new Date(); todayEnd.setHours(23,59,59,999);
+            loadOpenMeteoRegion(gridOutput.length>0?gridOutput:REGIONS.liguria.stations,todayStart,todayEnd,'oggi',function(omDati){
+              var omMap={};
+              omDati.forEach(function(s){omMap[s.n]=s.mm||0;});
+              gridOutput.forEach(function(s){
+                var todayMM=omMap[s.n]||0;
+                s.mm=Math.round((s.mm+todayMM)*10)/10;
+              });
+              cb(gridOutput);
+            });
+          } else {
+            cb(gridOutput);
+          }
+      });
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════
 var GEOJSON_URL='https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson';
 var geojsonCache=null;
