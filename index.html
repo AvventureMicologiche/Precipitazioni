@@ -266,16 +266,24 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
   }
   #region-panel .tp-title{margin-bottom:0;font-size:11px;white-space:nowrap;}
   #region-panel .tp-content{
-    display:flex !important;flex-direction:row;gap:4px;align-items:center;
+    display:flex !important;flex-direction:row;gap:6px;align-items:center;
     padding-top:0 !important;
     flex:1;
     justify-content:center;
   }
   #region-panel .tp-grid4{
-    width:auto;gap:4px;
+    width:auto;gap:6px;
   }
   #region-panel .rcheck-wrap{
-    width:auto;min-width:60px;
+    width:auto;
+  }
+  #region-panel .rcheck-name{
+    padding:10px 3px;font-size:11px;
+  }
+  #region-panel{
+    align-items:center !important;
+    padding-top:4px !important;
+    padding-bottom:4px !important;
   }
   /* Handle + titolo sempre visibili (48px) */
   .tp-handle{display:none;} /* hidden desktop, shown mobile */
@@ -414,15 +422,14 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
     <!-- Pannello regioni: gemello del pannello periodo -->
     <div id="region-panel">
       <div class="tp-handle" id="rp-handle">
-        <div class="tp-handle-bar"></div>
-        <div class="tp-title">🗺 Seleziona regioni</div>
+        <div class="tp-title" style="font-size:11px;white-space:nowrap;align-self:center;margin-top:-4px;">🗺 Seleziona regione</div>
       </div>
       <div class="tp-content">
         <div class="tp-grid4">
           <label class="rcheck-wrap">
-            <input type="checkbox" id="chk-lombardia" value="lombardia">
+            <input type="checkbox" id="chk-liguria" value="liguria">
             <span class="rcheck-box"></span>
-            <span class="rcheck-name">Lombardia</span>
+            <span class="rcheck-name">Liguria</span>
           </label>
           <label class="rcheck-wrap">
             <input type="checkbox" id="chk-piemonte" value="piemonte">
@@ -430,14 +437,14 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
             <span class="rcheck-name">Piemonte</span>
           </label>
           <label class="rcheck-wrap">
+            <input type="checkbox" id="chk-lombardia" value="lombardia">
+            <span class="rcheck-box"></span>
+            <span class="rcheck-name">Lombardia</span>
+          </label>
+          <label class="rcheck-wrap">
             <input type="checkbox" id="chk-veneto" value="veneto">
             <span class="rcheck-box"></span>
             <span class="rcheck-name">Veneto</span>
-          </label>
-          <label class="rcheck-wrap">
-            <input type="checkbox" id="chk-liguria" value="liguria">
-            <span class="rcheck-box"></span>
-            <span class="rcheck-name">Liguria</span>
           </label>
         </div>
       </div>
@@ -2409,7 +2416,7 @@ document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(
       if(rk==='lombardia') map.setView([45.3, 9.85], 7.5);
       else if(rk==='piemonte') map.setView([44.8, 7.9], 7.5);
       else if(rk==='veneto') map.setView([45.5, 11.8], 7.5);
-      else if(rk==='liguria') map.setView([44.3, 8.8], 8);
+      else if(rk==='liguria') map.setView([43.9, 8.8], 7.75);
     }
     setRegionBorder(rk,function(){
       clearMarkers();
