@@ -42,7 +42,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
 .rcheck-wrap input:checked ~ .rcheck-box::after{
   content:'✓';display:block;font-size:13px;font-weight:900;color:#fff;line-height:1;
 }
-.rcheck-name{font-size:14px;font-weight:600;color:#333;transition:color .15s;}
+.rcheck-name{font-size:12px;font-weight:600;color:#333;transition:color .15s;}
 .rcheck-wrap input:checked ~ .rcheck-name{color:#1b3f6e;font-weight:700;}
 .rcheck-wrap:hover .rcheck-box{border-color:#1b3f6e;}
 .rcheck-wrap:hover .rcheck-name{color:#1b3f6e;}
@@ -75,8 +75,8 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
 .rcheck-name{
   display:block;width:100%;
   background:#f0f4fb;border:1px solid #d0d8e8;border-radius:5px;
-  color:#1b3f6e;font-size:15px;font-weight:700;
-  padding:10px 4px;text-align:center;
+  color:#1b3f6e;font-size:13px;font-weight:700;
+  padding:8px 2px;text-align:center;
   cursor:pointer;transition:background .15s,border-color .15s;
 }
 .rcheck-wrap input:checked ~ .rcheck-name{
@@ -674,7 +674,7 @@ var REGIONS = {
 
   liguria: {
     name: 'Liguria',
-    center: [44.4, 8.7], zoom: 9,
+    center: [44.3, 8.7], zoom: 9,
     fonte: 'ARPA Liguria (OMIRL)',
     geojson: 'https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson',
     geojsonFilter: 'ligur',
