@@ -260,14 +260,22 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
     width:100% !important;
     border-radius:0 0 14px 14px !important;
     box-shadow:0 4px 12px rgba(0,0,0,.18) !important;
-    padding:8px 14px 10px !important;
+    padding:8px 10px 10px !important;
     z-index:1500 !important;
-    display:flex;align-items:center;gap:16px;
+    display:flex;align-items:center;gap:8px;
   }
-  #region-panel .tp-title{margin-bottom:0;font-size:12px;}
+  #region-panel .tp-title{margin-bottom:0;font-size:11px;white-space:nowrap;}
   #region-panel .tp-content{
-    display:flex !important;flex-direction:row;gap:16px;align-items:center;
+    display:flex !important;flex-direction:row;gap:4px;align-items:center;
     padding-top:0 !important;
+    flex:1;
+    justify-content:center;
+  }
+  #region-panel .tp-grid4{
+    width:auto;gap:4px;
+  }
+  #region-panel .rcheck-wrap{
+    width:auto;min-width:60px;
   }
   /* Handle + titolo sempre visibili (48px) */
   .tp-handle{display:none;} /* hidden desktop, shown mobile */
@@ -2292,6 +2300,7 @@ function switchRegion(regionKey){
       if(regionKey==='lombardia') map.setView([45.5, 9.85], 8, {animate:true});
       else if(regionKey==='piemonte') map.setView([44.9, 7.9], 8, {animate:true});
       else if(regionKey==='veneto') map.setView([45.6, 11.8], 8, {animate:true});
+      else if(regionKey==='liguria') map.setView([44.3, 8.8], 8, {animate:true});
     } else {
       map.setView(cfg.center, cfg.zoom, {animate:true});
     }
@@ -2322,9 +2331,12 @@ function fitMapToRegions(regionKeys){
     var cfg=REGIONS[regionKeys[0]];
     if(cfg) {
       if(window.innerWidth<=600){
-        if(regionKey==='lombardia') { map.setView([45.5, 9.85], 8, {animate:true,duration:0.6}); }
-        else if(regionKey==='piemonte') { map.setView([44.9, 7.9], 8, {animate:true,duration:0.6}); }
-        else if(regionKey==='veneto') { map.setView([45.6, 11.8], 8, {animate:true,duration:0.6}); }
+        var rk0=regionKeys[0];
+        if(rk0==='lombardia') { map.setView([45.5, 9.85], 8, {animate:true,duration:0.6}); }
+        else if(rk0==='piemonte') { map.setView([44.9, 7.9], 8, {animate:true,duration:0.6}); }
+        else if(rk0==='veneto') { map.setView([45.6, 11.8], 8, {animate:true,duration:0.6}); }
+        else if(rk0==='liguria') { map.setView([44.3, 8.8], 8, {animate:true,duration:0.6}); }
+        else { map.setView(cfg.center, cfg.zoom, {animate:true,duration:0.6}); }
       } else {
         map.setView(cfg.center, cfg.zoom, {animate:true,duration:0.6});
       }
@@ -2397,6 +2409,7 @@ document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(
       if(rk==='lombardia') map.setView([45.3, 9.85], 7.5);
       else if(rk==='piemonte') map.setView([44.8, 7.9], 7.5);
       else if(rk==='veneto') map.setView([45.5, 11.8], 7.5);
+      else if(rk==='liguria') map.setView([44.3, 8.8], 8);
     }
     setRegionBorder(rk,function(){
       clearMarkers();
