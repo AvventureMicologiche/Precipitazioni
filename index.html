@@ -1190,17 +1190,11 @@ function positionPanels(){
     var tpBottom = tp.offsetTop + tp.offsetHeight;
     var legTop = tpBottom + GAP;
     var legH = leg.offsetHeight;
-    var availH = window.innerHeight - legTop - 10;
-    // Se non ci sta, riduci padding legenda
-    if(availH < legH){
-      leg.style.padding = '6px 10px';
-      legH = leg.offsetHeight;
-    } else {
-      leg.style.padding = '';
-    }
-    // Se ancora non ci sta, ancorala al fondo
-    if(legTop + legH > window.innerHeight - 10){
-      legTop = window.innerHeight - legH - 10;
+    // Margine extra per taskbar Windows e bordi browser (60px)
+    var maxBottom = window.innerHeight - 60;
+    // Se non ci sta, ancorala al fondo con margine
+    if(legTop + legH > maxBottom){
+      legTop = maxBottom - legH;
     }
     if(legTop < 0) legTop = 10;
     leg.style.top = legTop + 'px';
