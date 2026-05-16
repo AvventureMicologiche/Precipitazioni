@@ -2165,9 +2165,10 @@ function loadARPAVenetoRegion(pastDate,nowDate,labelPeriodo,cb){
 // ─── ARPA Liguria (file storici da GitHub) ──────────────────────
 function loadARPALiguriaRegion(pastDate,nowDate,labelPeriodo,cb){
   var GITHUB_RAW='https://raw.githubusercontent.com/AvventureMicologiche/Mappa-Precipitazioni-Nord/main/data/liguria';
+  function _fmt(d){var p=function(n){return String(n).padStart(2,'0');};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
   var days=[];
   var d=new Date(pastDate);
-  while(d<=nowDate){days.push(fmtDate(new Date(d)));d.setDate(d.getDate()+1);}
+  while(d<=nowDate){days.push(_fmt(new Date(d)));d.setDate(d.getDate()+1);}
 
   var rainTot={};
   var stMeta={};
