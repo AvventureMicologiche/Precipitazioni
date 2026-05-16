@@ -66,7 +66,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
   padding:11px 13px;
 }
 #time-panel{top:182px;padding:11px 13px;}
-#legend-panel{padding:11px 14px;display:none;}
+#legend-panel{padding:11px 14px;display:none;max-height:calc(100vh - 200px);overflow-y:auto;}
 
 /* Checkbox nel pannello regioni — stile identico a tp-btn */
 .rcheck-wrap{display:flex;width:100%;cursor:pointer;user-select:none;}
@@ -230,7 +230,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
    ══════════════════════════════════════ */
 @media(max-width:600px){
   /* Forza layout corretto */
-  html,body{min-height:100%;overflow-y:auto;}
+  html,body{height:100%;height:100dvh;overflow:hidden;}
   body{display:flex;flex-direction:column;}
   header{flex-shrink:0;height:46px;}
   #map-wrap{flex:1;min-height:0;position:relative;}
@@ -1184,12 +1184,22 @@ function positionPanels(){
   // time-panel: GAP sotto region-panel
   tp.style.top=(rpBottom+GAP)+'px';
 
-  // legend-panel: GAP sotto time-panel (solo se visibile)
+  // legend-panel: GAP sotto time-panel, mai fuori dallo schermo
   if(leg.style.display!=='none'){
     var tpBottom = tp.offsetTop + tp.offsetHeight;
-    leg.style.top=(tpBottom+GAP)+'px';
-    leg.style.left='10px';
-    leg.style.width='300px';
+    var legTop = tpBottom + GAP;
+    leg.style.top = legTop + 'px';
+    leg.style.left = '10px';
+    leg.style.width = '300px';
+    // Se la legenda esce dal viewport, riducine l'altezza massima
+    var maxH = window.innerHeight - legTop - 10;
+    if(maxH < leg.scrollHeight){
+      leg.style.maxHeight = maxH + 'px';
+      leg.style.overflowY = 'auto';
+    } else {
+      leg.style.maxHeight = '';
+      leg.style.overflowY = '';
+    }
   }
 }
 
