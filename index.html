@@ -1184,22 +1184,21 @@ function positionPanels(){
   // time-panel: GAP sotto region-panel
   tp.style.top=(rpBottom+GAP)+'px';
 
-  // legend-panel: GAP sotto time-panel, mai fuori dallo schermo
+  // legend-panel: posiziona sempre visibile nel viewport
   if(leg.style.display!=='none'){
     var tpBottom = tp.offsetTop + tp.offsetHeight;
     var legTop = tpBottom + GAP;
+    var legH = leg.offsetHeight;
+    // Se esce dal viewport, ancorala al fondo
+    if(legTop + legH > window.innerHeight - 10){
+      legTop = window.innerHeight - legH - 10;
+    }
+    if(legTop < 0) legTop = 10;
     leg.style.top = legTop + 'px';
     leg.style.left = '10px';
     leg.style.width = '300px';
-    // Se la legenda esce dal viewport, riducine l'altezza massima
-    var maxH = window.innerHeight - legTop - 10;
-    if(maxH < leg.scrollHeight){
-      leg.style.maxHeight = maxH + 'px';
-      leg.style.overflowY = 'auto';
-    } else {
-      leg.style.maxHeight = '';
-      leg.style.overflowY = '';
-    }
+    leg.style.maxHeight = '';
+    leg.style.overflowY = '';
   }
 }
 
