@@ -361,12 +361,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
   .hdr-sub{display:none;}
   .fonte-tag{bottom:auto;top:52px;font-size:8px;}
 }
-@media (max-height: 680px) and (min-width: 601px) {
-  #legend-panel{padding:6px 10px!important;}
-  .stats-row{margin-top:4px!important;}
-  .stat{padding:3px 4px!important;}
-  .sv{font-size:16px!important;}
-}
+
 </style>
 </head>
 <body>
@@ -1195,7 +1190,15 @@ function positionPanels(){
     var tpBottom = tp.offsetTop + tp.offsetHeight;
     var legTop = tpBottom + GAP;
     var legH = leg.offsetHeight;
-    // Se esce dal viewport, ancorala al fondo
+    var availH = window.innerHeight - legTop - 10;
+    // Se non ci sta, riduci padding legenda
+    if(availH < legH){
+      leg.style.padding = '6px 10px';
+      legH = leg.offsetHeight;
+    } else {
+      leg.style.padding = '';
+    }
+    // Se ancora non ci sta, ancorala al fondo
     if(legTop + legH > window.innerHeight - 10){
       legTop = window.innerHeight - legH - 10;
     }
@@ -1203,8 +1206,6 @@ function positionPanels(){
     leg.style.top = legTop + 'px';
     leg.style.left = '10px';
     leg.style.width = '300px';
-    leg.style.maxHeight = '';
-    leg.style.overflowY = '';
   }
 }
 
