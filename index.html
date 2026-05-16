@@ -1190,8 +1190,8 @@ function positionPanels(){
     var tpBottom = tp.offsetTop + tp.offsetHeight;
     var legTop = tpBottom + GAP;
     var legH = leg.offsetHeight;
-    // Margine extra per taskbar Windows e bordi browser (100px)
-    var maxBottom = window.innerHeight - 100;
+    // Margine extra per taskbar Windows e bordi browser
+    var maxBottom = window.innerHeight - 30;
     // Se non ci sta, ancorala al fondo con margine
     if(legTop + legH > maxBottom){
       legTop = maxBottom - legH;
