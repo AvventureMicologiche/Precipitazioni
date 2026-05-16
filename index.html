@@ -2210,23 +2210,9 @@ function loadARPALiguriaRegion(pastDate,nowDate,labelPeriodo,cb){
 
           var gridOutput=selectUniform(arpaFull,120);
 
-          var todayStr=fmtDate(new Date());
-          var lastDay=days[days.length-1];
-          if(lastDay===todayStr){
-            var todayStart=new Date(); todayStart.setHours(0,0,0,0);
-            var todayEnd=new Date(); todayEnd.setHours(23,59,59,999);
-            loadOpenMeteoRegion(gridOutput.length>0?gridOutput:REGIONS.liguria.stations,todayStart,todayEnd,'oggi',function(omDati){
-              var omMap={};
-              omDati.forEach(function(s){omMap[s.n]=s.mm||0;});
-              gridOutput.forEach(function(s){
-                var todayMM=omMap[s.n]||0;
-                s.mm=Math.round((s.mm+todayMM)*10)/10;
-              });
-              cb(gridOutput);
-            });
-          } else {
-            cb(gridOutput);
-          }
+          // Restituisce sempre i dati storici accumulati
+          // (oggi viene già incluso nel file JSON del giorno corrente)
+          cb(gridOutput);
       });
   });
 }
