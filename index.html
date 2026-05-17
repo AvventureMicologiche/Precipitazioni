@@ -2187,10 +2187,9 @@ function loadARPALiguriaRegion(pastDate,nowDate,labelPeriodo,cb){
           });
         }
       })
-      .catch(function(e){console.warn('[LIG] errore file '+day+':',e.message);})
+      .catch(function(){})
       .finally(function(){
         pending--;
-        console.log('[LIG] pending:',pending,'day:',day,'rainTot keys:',Object.keys(rainTot).length);
         if(pending>0) return;
 
           // Stazioni ARPA reali (ID non om_X), fallback su tutto se poche
