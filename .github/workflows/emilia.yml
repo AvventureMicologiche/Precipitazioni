@@ -1,0 +1,35 @@
+name: Emilia
+on:
+  workflow_dispatch:
+    inputs:
+      date_override:
+        description: 'Data da raccogliere (YYYY-MM-DD, lascia vuoto per oggi)'
+        required: false
+        default: ''
+  schedule:
+    - cron: '15 0 * * *'
+    - cron: '15 4 * * *'
+    - cron: '15 8 * * *'
+    - cron: '15 12 * * *'
+    - cron: '15 16 * * *'
+    - cron: '15 20 * * *'
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Raccoglie dati Emilia Romagna
+        run: node .github/scripts/collect-emilia.js
+        env:
+          DATE_OVERRIDE: ${{ inputs.date_override }}
+      - name: Commit e push
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@bot.com"
+          git add data/emilia/
+          git diff --staged --quiet || git commit -m "emilia $(date -u +%Y-%m-%d)"
+          git pull --rebase origin main
+          git push
