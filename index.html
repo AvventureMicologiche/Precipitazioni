@@ -42,7 +42,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
 .rcheck-wrap input:checked ~ .rcheck-box::after{
   content:'✓';display:block;font-size:13px;font-weight:900;color:#fff;line-height:1;
 }
-.rcheck-name{font-size:12px;font-weight:600;color:#333;transition:color .15s;}
+.rcheck-name{font-size:11px;font-weight:600;color:#333;transition:color .15s;}
 .rcheck-wrap input:checked ~ .rcheck-name{color:#1b3f6e;font-weight:700;}
 .rcheck-wrap:hover .rcheck-box{border-color:#1b3f6e;}
 .rcheck-wrap:hover .rcheck-name{color:#1b3f6e;}
@@ -56,14 +56,14 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
   position:absolute;left:10px;z-index:1000;
   background:rgba(255,255,255,.96);border-radius:10px;
   box-shadow:0 2px 12px rgba(0,0,0,.22);
-  pointer-events:all;width:300px;
+  pointer-events:all;width:360px;
 }
 #region-panel{
   position:absolute;left:10px;top:100px;z-index:1000;
   background:rgba(255,255,255,.96);border-radius:10px;
   box-shadow:0 2px 12px rgba(0,0,0,.22);
-  pointer-events:all;width:300px;
-  padding:11px 13px;
+  pointer-events:all;width:360px;
+  padding:9px 10px;
 }
 #time-panel{top:182px;padding:11px 13px;}
 #legend-panel{padding:11px 14px;display:none;max-height:calc(100vh - 200px);overflow-y:auto;}
@@ -84,6 +84,10 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
 }
 .rcheck-wrap:hover .rcheck-name{background:#dce6f7;border-color:#1b3f6e;}
 .rcheck-wrap:hover input:checked ~ .rcheck-name{background:#234f8a;}
+
+/* Select regioni mobile */
+.region-select-mobile{display:none;}
+.region-btns-desktop{display:grid;}
 
 /* Pulsanti periodo */
 .tp-title{font-size:14px;font-weight:700;color:#1b3f6e;
@@ -285,6 +289,16 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
     padding-top:4px !important;
     padding-bottom:4px !important;
   }
+  .region-btns-desktop{display:none !important;}
+  .region-select-mobile{
+    display:block !important;
+    flex:1;
+    font-size:15px;font-weight:700;
+    padding:10px 8px;
+    border:1px solid #d0d8e8;border-radius:5px;
+    background:#f0f4fb;color:#1b3f6e;
+    width:100%;
+  }
   /* Handle + titolo sempre visibili (48px) */
   .tp-handle{display:none;} /* hidden desktop, shown mobile */
 .tp-handle{
@@ -426,7 +440,8 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
         <div class="tp-title" style="font-size:11px;white-space:nowrap;align-self:center;margin-top:-4px;">🗺 Seleziona regione</div>
       </div>
       <div class="tp-content">
-        <div class="tp-grid4">
+        <!-- Desktop: bottoni (nascosti su mobile) -->
+        <div class="tp-grid5 region-btns-desktop">
           <label class="rcheck-wrap">
             <input type="checkbox" id="chk-liguria" value="liguria">
             <span class="rcheck-box"></span>
@@ -447,7 +462,21 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
             <span class="rcheck-box"></span>
             <span class="rcheck-name">Veneto</span>
           </label>
+          <label class="rcheck-wrap">
+            <input type="checkbox" id="chk-emilia" value="emilia">
+            <span class="rcheck-box"></span>
+            <span class="rcheck-name">Emilia</span>
+          </label>
         </div>
+        <!-- Mobile: select dropdown -->
+        <select id="region-select" class="region-select-mobile">
+          <option value="">Seleziona regione</option>
+          <option value="liguria">Liguria</option>
+          <option value="piemonte">Piemonte</option>
+          <option value="lombardia">Lombardia</option>
+          <option value="veneto">Veneto</option>
+          <option value="emilia">Emilia Romagna</option>
+        </select>
       </div>
     </div>
 
@@ -732,10 +761,10 @@ var REGIONS = {
   emilia: {
     name: 'Emilia-Romagna',
     center: [44.5, 11.0], zoom: 8,
-    fonte: 'Open-Meteo (ERA5 reanalysis)',
+    fonte: 'ARPAE Emilia-Romagna',
     geojson: 'https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson',
     geojsonFilter: 'emilia',
-    dataSource: 'open_meteo',
+    dataSource: 'arpa_emilia',
     stations: [
       {n:"Bologna",         lat:44.494,lon:11.343,q:54,  p:"BO"},
       {n:"Ferrara",         lat:44.836,lon:11.620,q:9,   p:"FE"},
@@ -1710,6 +1739,10 @@ function loadData(pastDate,nowDate,labelPeriodo){
       loadARPALiguriaRegion(pastDate,nowDate,labelPeriodo,function(dati){
         onRegionDone(dati,'🟢 ARPA live');
       });
+    } else if(source==='arpa_emilia'){
+      loadARPAEmiliaRegion(pastDate,nowDate,labelPeriodo,function(dati){
+        onRegionDone(dati,'🟢 ARPA live');
+      });
     } else {
       loadOpenMeteoRegion(cfg.stations||[],pastDate,nowDate,labelPeriodo,function(dati){
         onRegionDone(dati,'🌍 Open-Meteo');
@@ -2234,6 +2267,58 @@ function loadARPALiguriaRegion(pastDate,nowDate,labelPeriodo,cb){
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ─── ARPA Emilia Romagna (file storici da GitHub) ───────────────
+function loadARPAEmiliaRegion(pastDate,nowDate,labelPeriodo,cb){
+  var GITHUB_RAW='https://raw.githubusercontent.com/AvventureMicologiche/Mappa-Precipitazioni-Nord/main/data/emilia';
+  function _fmt(d){var p=function(n){return String(n).padStart(2,'0');};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+  var days=[];
+  var d=new Date(pastDate);
+  while(d<=nowDate){days.push(_fmt(new Date(d)));d.setDate(d.getDate()+1);}
+
+  var rainTot={};
+  var stMeta={};
+  var pending=days.length;
+  if(pending===0){cb([]);return;}
+
+  days.forEach(function(day){
+    fetch(GITHUB_RAW+'/'+day+'.json')
+      .then(function(r){if(!r.ok)throw new Error('404');return r.json();})
+      .then(function(data){
+        if(data.stations){
+          data.stations.forEach(function(s){
+            var id=s.id||s.n;
+            if(!stMeta[id]) stMeta[id]={n:s.n,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||''};
+            rainTot[id]=(rainTot[id]||0)+(s.mm||0);
+          });
+        }
+      })
+      .catch(function(){})
+      .finally(function(){
+        pending--;
+        if(pending>0) return;
+        var arpaOnly=Object.keys(rainTot).filter(function(id){
+          return !String(id).startsWith('om_');
+        }).map(function(id){
+          var s=stMeta[id];if(!s)return null;
+          var mm=rainTot[id]||0;
+          return {n:s.n,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'',
+                  mm:mm<0.5?0:Math.round(mm*10)/10};
+        }).filter(Boolean);
+
+        var arpaFull=arpaOnly.length>=20?arpaOnly:Object.keys(rainTot).map(function(id){
+          var s=stMeta[id];if(!s)return null;
+          var mm=rainTot[id]||0;
+          return {n:s.n,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||'',
+                  mm:mm<0.5?0:Math.round(mm*10)/10};
+        }).filter(Boolean);
+
+        var gridOutput=selectUniform(arpaFull,150);
+        cb(gridOutput);
+      });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 var GEOJSON_URL='https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson';
 var geojsonCache=null;
 
@@ -2355,6 +2440,7 @@ function fitMapToRegions(regionKeys){
         else if(rk0==='piemonte') { map.setView([44.9, 7.9], 8, {animate:true,duration:0.6}); }
         else if(rk0==='veneto') { map.setView([45.6, 11.8], 8, {animate:true,duration:0.6}); }
         else if(rk0==='liguria') { map.setView([44.3, 8.8], 8, {animate:true,duration:0.6}); }
+        else if(rk0==='emilia') { map.setView([44.5, 11.0], 7.5, {animate:true,duration:0.6}); }
         else { map.setView(cfg.center, cfg.zoom, {animate:true,duration:0.6}); }
       } else {
         map.setView(cfg.center, cfg.zoom, {animate:true,duration:0.6});
@@ -2399,6 +2485,38 @@ document.getElementById('btn-funghi').addEventListener('click',function(){
   document.getElementById('datehdr').textContent=fmt(past25)+' – '+fmt(past18);
   loadData(past25,past18,label);
 });
+// Select mobile regioni
+document.getElementById('region-select').addEventListener('change', function(){
+  var rk = this.value;
+  if(!rk) return;
+  // Deseleziona tutti i checkbox
+  document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(cb){
+    cb.checked = false;
+    var rk2 = cb.value;
+    if(regionBorders[rk2]){map.removeLayer(regionBorders[rk2]);delete regionBorders[rk2];}
+  });
+  // Seleziona il checkbox corrispondente
+  var cb = document.getElementById('chk-'+rk);
+  if(cb) cb.checked = true;
+  clearMarkers(); clearHeatmap();
+  document.getElementById('legend-panel').style.display='none';
+  hideLegendMobile();
+  document.getElementById('badge').textContent='–';
+  document.getElementById('datehdr').textContent='Seleziona il periodo';
+  var _ts=document.getElementById('tp-status');_ts.className='';_ts.textContent='';
+  // Centra mappa
+  if(rk==='lombardia') map.setView([45.3, 9.85], 7.5);
+  else if(rk==='piemonte') map.setView([44.8, 7.9], 7.5);
+  else if(rk==='veneto') map.setView([45.5, 11.8], 7.5);
+  else if(rk==='liguria') map.setView([43.9, 8.8], 7.75);
+  else if(rk==='emilia') map.setView([44.5, 11.0], 7.5);
+  setRegionBorder(rk, function(){
+    clearMarkers();
+    addDefaultMarkersForRegion(rk);
+  });
+  if(currentPast&&currentNow) loadData(currentPast, currentNow, currentLabel);
+});
+
 document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(cb){
   cb.addEventListener('change',function(){
     if(!this.checked){
@@ -2429,6 +2547,7 @@ document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(
       else if(rk==='piemonte') map.setView([44.8, 7.9], 7.5);
       else if(rk==='veneto') map.setView([45.5, 11.8], 7.5);
       else if(rk==='liguria') map.setView([43.9, 8.8], 7.75);
+      else if(rk==='emilia') map.setView([44.5, 11.0], 7.5);
     }
     setRegionBorder(rk,function(){
       clearMarkers();
@@ -2536,6 +2655,9 @@ document.getElementById('cd-apply').addEventListener('click',function(){
 window.addEventListener('resize', function(){
   positionPanels();
 });
+
+// Posiziona pannelli subito all'avvio
+setTimeout(positionPanels, 100);
 
 // ── Toggle pannello mobile ───────────────────────────────────────────────
 (function(){
