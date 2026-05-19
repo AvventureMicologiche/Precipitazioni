@@ -290,14 +290,31 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
     padding-bottom:4px !important;
   }
   .region-btns-desktop{display:none !important;}
+  #rp-handle{display:none !important;}
+  #region-panel{
+    padding:6px 6px !important;
+  }
+  #region-panel .tp-content{
+    display:block !important;
+    padding-top:0 !important;
+  }
   .region-select-mobile{
     display:block !important;
-    flex:1;
+    width:calc(100% - 0px) !important;
+    margin:0 !important;
     font-size:15px;font-weight:700;
-    padding:10px 8px;
-    border:1px solid #d0d8e8;border-radius:5px;
+    padding:8px 10px;
+    border:1px solid #d0d8e8;border-radius:0;
     background:#f0f4fb;color:#1b3f6e;
-    width:100%;
+  }
+  #region-panel{
+    border-radius:0 !important;
+  }
+  #time-panel{
+    border-radius:0 !important;
+  }
+  #legend-panel{
+    border-radius:0 !important;
   }
   /* Handle + titolo sempre visibili (48px) */
   .tp-handle{display:none;} /* hidden desktop, shown mobile */
@@ -470,7 +487,7 @@ h1{font-size:14px;font-weight:600;white-space:nowrap}
         </div>
         <!-- Mobile: select dropdown -->
         <select id="region-select" class="region-select-mobile">
-          <option value="">Seleziona regione</option>
+          <option value="">Tocca per scegliere la regione ▼</option>
           <option value="liguria">Liguria</option>
           <option value="piemonte">Piemonte</option>
           <option value="lombardia">Lombardia</option>
@@ -2440,7 +2457,7 @@ function fitMapToRegions(regionKeys){
         else if(rk0==='piemonte') { map.setView([44.9, 7.9], 8, {animate:true,duration:0.6}); }
         else if(rk0==='veneto') { map.setView([45.6, 11.8], 8, {animate:true,duration:0.6}); }
         else if(rk0==='liguria') { map.setView([44.3, 8.8], 8, {animate:true,duration:0.6}); }
-        else if(rk0==='emilia') { map.setView([44.5, 11.0], 7.5, {animate:true,duration:0.6}); }
+        else if(rk0==='emilia') { map.setView([43.9, 11.0], 7.0, {animate:true,duration:0.6}); }
         else { map.setView(cfg.center, cfg.zoom, {animate:true,duration:0.6}); }
       } else {
         map.setView(cfg.center, cfg.zoom, {animate:true,duration:0.6});
@@ -2509,7 +2526,7 @@ document.getElementById('region-select').addEventListener('change', function(){
   else if(rk==='piemonte') map.setView([44.8, 7.9], 7.5);
   else if(rk==='veneto') map.setView([45.5, 11.8], 7.5);
   else if(rk==='liguria') map.setView([43.9, 8.8], 7.75);
-  else if(rk==='emilia') map.setView([44.5, 11.0], 7.5);
+  else if(rk==='emilia') map.setView([43.9, 11.0], 7.0);
   setRegionBorder(rk, function(){
     clearMarkers();
     addDefaultMarkersForRegion(rk);
@@ -2547,7 +2564,7 @@ document.querySelectorAll('.rcheck-wrap input[type=checkbox]').forEach(function(
       else if(rk==='piemonte') map.setView([44.8, 7.9], 7.5);
       else if(rk==='veneto') map.setView([45.5, 11.8], 7.5);
       else if(rk==='liguria') map.setView([43.9, 8.8], 7.75);
-      else if(rk==='emilia') map.setView([44.5, 11.0], 7.5);
+      else if(rk==='emilia') map.setView([43.9, 11.0], 7.0);
     }
     setRegionBorder(rk,function(){
       clearMarkers();
