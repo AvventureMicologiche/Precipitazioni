@@ -2303,7 +2303,8 @@ function loadARPAEmiliaRegion(pastDate,nowDate,labelPeriodo,cb){
       .then(function(data){
         if(data.stations){
           data.stations.forEach(function(s){
-            var id=s.id||s.n;
+            // Per om_X usa nome stazione come ID per evitare sovrascrizioni tra giorni diversi
+            var id=String(s.id).startsWith('om_')?s.n:(s.id||s.n);
             if(!stMeta[id]) stMeta[id]={n:s.n,lat:s.lat,lon:s.lon,q:s.q||0,p:s.p||''};
             rainTot[id]=(rainTot[id]||0)+(s.mm||0);
           });
@@ -2313,6 +2314,7 @@ function loadARPAEmiliaRegion(pastDate,nowDate,labelPeriodo,cb){
       .finally(function(){
         pending--;
         if(pending>0) return;
+        // Per Emilia: ID numerici per ARPA reali, om_X per Open-Meteo Archive
         var arpaOnly=Object.keys(rainTot).filter(function(id){
           return !String(id).startsWith('om_');
         }).map(function(id){
@@ -2322,6 +2324,7 @@ function loadARPAEmiliaRegion(pastDate,nowDate,labelPeriodo,cb){
                   mm:mm<0.5?0:Math.round(mm*10)/10};
         }).filter(Boolean);
 
+        // Se ci sono abbastanza stazioni ARPA reali usale, altrimenti usa tutto
         var arpaFull=arpaOnly.length>=20?arpaOnly:Object.keys(rainTot).map(function(id){
           var s=stMeta[id];if(!s)return null;
           var mm=rainTot[id]||0;
@@ -2329,6 +2332,7 @@ function loadARPAEmiliaRegion(pastDate,nowDate,labelPeriodo,cb){
                   mm:mm<0.5?0:Math.round(mm*10)/10};
         }).filter(Boolean);
 
+        if(arpaFull.length<5){cb([]);return;}
         var gridOutput=selectUniform(arpaFull,150);
         cb(gridOutput);
       });
